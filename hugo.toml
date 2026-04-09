@@ -2,3 +2,106 @@ baseURL = 'https://www.bytezhou.top'
 languageCode = 'en-us'
 title = 'ByteZhou的个人空间'
 theme = 'PaperMod'
+
+# Hugo 环境
+disablePathToLower = true
+
+[minify]
+  disableXML = true
+
+# 站点参数
+[params]
+  env = 'production'
+
+  # 基本信息
+  description = 'ByteZhou的个人空间 - 记录思考、技术实践与生活'
+  keywords = ['blog', 'portfolio', 'technology', 'ai', 'development', 'architecture', 'life']
+  author = 'ByteZhou'
+
+  # 日期格式
+  DateFormat = 'January 2, 2006'
+
+  # 主题设置
+  defaultTheme = 'light'
+  disableThemeToggle = false
+
+  # 文章显示设置
+  ShowReadingTime = false
+  ShowWordCount = false
+  ShowShareButtons = true
+  ShowPostNavLinks = true
+  ShowBreadCrumbs = true
+  ShowCodeCopyButtons = true
+  ShowRssButtonInSectionTermList = true
+
+  # 分页
+  paginate = 10
+
+  # 个人简介模式
+  [params.profileMode]
+    enabled = false
+    title = 'ByteZhou的个人空间'
+    subtitle = '👋 你好，我是ByteZhou<br>在这里记录思考、技术实践与人生<br>专注于 技术分享、AI、架构设计等领域'
+    imageUrl = 'images/avatar.png'
+    imageWidth = 150
+    imageHeight = 150
+    imageTitle = 'ByteZhou'
+    [[params.profileMode.buttons]]
+      name = '文章列表'
+      url = '/posts'
+    [[params.profileMode.buttons]]
+      name = '关于我'
+      url = '/about'
+
+  # 社交链接
+  [[params.socialIcons]]
+    name = 'github'
+    url = 'https://github.com/zhouxinyu1cp'
+  [[params.socialIcons]]
+    name = 'rss'
+    url = '/index.xml'
+
+  # 封面图片默认设置
+  [params.cover]
+    hiddenInSingle = false
+    hiddenInList = false
+
+  # 编辑链接配置（可选）
+  # [params.editPost]
+  #   URL = "https://github.com/yourname/my-site/content"
+  #   Text = "编辑此页"
+  #   appendFilePath = true
+
+# 链接处理
+[permalinks]
+  posts = '/posts/:slug/'
+
+# markup 配置
+[markup]
+  [markup.highlight]
+    noClasses = false
+    lineNos = true
+  [markup.tableOfContents]
+    startLevel = 1
+    endLevel = 3
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+
+# 菜单
+[menu]
+  [[menu.main]]
+    identifier = 'posts'
+    name = '文章'
+    url = '/posts/'
+    weight = 10
+  [[menu.main]]
+    identifier = 'categories'
+    name = '分类'
+    url = '/categories/'
+    weight = 20
+  [[menu.main]]
+    identifier = 'tags'
+    name = '标签'
+    url = '/tags/'
+    weight = 30

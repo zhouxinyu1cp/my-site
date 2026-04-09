@@ -1,0 +1,116 @@
+{{- define "main" }}
+<div class="home-layout">
+    {{- /* 左侧个人简介 */ -}}
+    <aside class="profile-sidebar">
+        {{- with site.Params.profileMode }}
+        <div class="profile-inner">
+            <h1>{{ .title | default site.Title | markdownify }}</h1>
+            <span>{{ .subtitle | markdownify }}</span>
+            {{- partial "social_icons.html" -}}
+        </div>
+        {{- end }}
+    </aside>
+
+    {{- /* 右侧文章列表 */ -}}
+    <section class="article-list">
+        <h2 class="section-title">最新文章</h2>
+        {{- $pages := where site.RegularPages "Type" "in" site.Params.mainSections }}
+        {{- $pages = where $pages "Params.hiddenInHomeList" "!=" "true" }}
+        {{- $pages = $pages | first 10 }}
+
+        {{- range $pages }}
+        <article class="post-item">
+            <a href="{{ .Permalink }}">{{ .Title }}</a>
+            <span class="post-date">{{ .Date.Format "2006-01-02" }}</span>
+        </article>
+        {{- end }}
+
+        {{- if gt (len $pages) 0 }}
+        <div class="view-more">
+            <a href="/posts">查看全部文章 →</a>
+        </div>
+        {{- end }}
+    </section>
+</div>
+
+<style>
+.home-layout {
+    display: flex;
+    gap: 3rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+.profile-sidebar {
+    flex: 0 0 260px;
+}
+.profile-sidebar .profile-inner {
+    text-align: center;
+}
+.profile-sidebar img {
+    border-radius: 50%;
+    margin-bottom: 1rem;
+}
+.profile-sidebar h1 {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+}
+.profile-sidebar span {
+    font-size: 0.9rem;
+    color: var(--secondary);
+    line-height: 1.6;
+}
+.article-list {
+    flex: 1;
+    min-width: 0;
+}
+.article-list .section-title {
+    font-size: 1.3rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+.article-list .post-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border);
+}
+.article-list .post-item a {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 1rem;
+    flex: 1;
+    margin-right: 1rem;
+}
+.article-list .post-item a:hover {
+    text-decoration: underline;
+}
+.article-list .post-date {
+    font-size: 0.85rem;
+    color: var(--secondary);
+    white-space: nowrap;
+}
+.article-list .view-more {
+    margin-top: 1.2rem;
+}
+.article-list .view-more a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+.article-list .view-more a:hover {
+    text-decoration: underline;
+}
+@media (max-width: 700px) {
+    .home-layout {
+        flex-direction: column;
+    }
+    .profile-sidebar {
+        flex: none;
+    }
+}
+</style>
+
+{{- end }}{{- /* end main */ -}}

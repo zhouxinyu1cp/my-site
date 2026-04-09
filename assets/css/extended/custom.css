@@ -1,0 +1,306 @@
+/*
+ * 自定义样式 - 优化阅读体验和首页布局
+ */
+
+/* ===========================
+   1. 个人简介模式样式优化
+   =========================== */
+.profile-mode {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.profile img {
+    border-radius: 50%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease;
+}
+
+.profile img:hover {
+    transform: scale(1.05);
+}
+
+.profile h1 {
+    font-size: 32px;
+    margin: 20px 0 10px;
+    font-weight: 700;
+}
+
+.profile .subtitle {
+    font-size: 18px;
+    color: var(--secondary);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.profile .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.profile .buttons a {
+    display: inline-block;
+    padding: 10px 24px;
+    background: var(--primary);
+    color: var(--theme);
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.profile .buttons a:hover {
+    background: var(--tertiary);
+    transform: translateY(-2px);
+}
+
+/* 社交图标样式 */
+.social-icons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.social-icons a {
+    display: inline-flex;
+    padding: 8px;
+    color: var(--secondary);
+    transition: color 0.2s ease;
+}
+
+.social-icons a:hover {
+    color: var(--primary);
+}
+
+/* ===========================
+   2. 文章内容区域优化
+   =========================== */
+.post-content {
+    font-size: 17px;
+    line-height: 1.85;
+    letter-spacing: 0.3px;
+}
+
+.post-content p {
+    margin-bottom: 1.5em;
+}
+
+/* 标题样式优化 */
+.post-content h2 {
+    font-size: 26px;
+    margin-top: 2.5em;
+    margin-bottom: 1em;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid var(--border);
+}
+
+.post-content h3 {
+    font-size: 20px;
+    margin-top: 2em;
+    margin-bottom: 0.8em;
+}
+
+.post-content h4 {
+    font-size: 17px;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+/* 链接样式 */
+.post-content a {
+    color: #0969da;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.post-content a:hover {
+    border-bottom-color: #0969da;
+}
+
+/* 引用块样式 */
+.post-content blockquote {
+    margin: 1.5em 0;
+    padding: 1em 1.5em;
+    border-left: 4px solid var(--primary);
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+}
+
+[data-theme="dark"] .post-content blockquote {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* 代码块样式 */
+.post-content pre {
+    border-radius: 12px;
+    margin: 1.5em 0;
+}
+
+/* 图片样式 */
+.post-content img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 2em auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .post-content img {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 列表样式优化 */
+.post-content ul,
+.post-content ol {
+    padding-left: 1.5em;
+    margin-bottom: 1.5em;
+}
+
+.post-content li {
+    margin-bottom: 0.5em;
+    line-height: 1.75;
+}
+
+/* 水平线样式 */
+.post-content hr {
+    margin: 2.5em 0;
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+}
+
+/* 表格样式 */
+.post-content table {
+    width: 100%;
+    margin: 1.5em 0;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.post-content th,
+.post-content td {
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+}
+
+.post-content th {
+    background: rgba(0, 0, 0, 0.03);
+    font-weight: 600;
+}
+
+[data-theme="dark"] .post-content th {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* 文章元信息优化 */
+.post-meta {
+    font-size: 14px;
+    color: var(--secondary);
+}
+
+/* 标题悬停效果 */
+.post-content h2:hover,
+.post-content h3:hover {
+    color: var(--primary);
+}
+
+/* ===========================
+   3. 文章列表（首页/归档页）样式
+   =========================== */
+.post-entry {
+    background: var(--entry);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 25px;
+    margin-bottom: 20px;
+    transition: all 0.2s ease;
+}
+
+.post-entry:hover {
+    border-color: var(--tertiary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.first-entry {
+    background: var(--entry);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.entry-header h2 {
+    font-size: 24px;
+    margin-bottom: 12px;
+}
+
+.entry-header h2 a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.entry-header h2 a:hover {
+    color: var(--secondary);
+}
+
+.entry-content {
+    color: var(--secondary);
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 15px;
+}
+
+.entry-content p {
+    margin-bottom: 0;
+}
+
+.entry-footer {
+    font-size: 13px;
+    color: var(--secondary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.entry-footer span {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* ===========================
+   4. 响应式优化
+   =========================== */
+@media screen and (max-width: 768px) {
+    .profile h1 {
+        font-size: 26px;
+    }
+
+    .profile .subtitle {
+        font-size: 15px;
+    }
+
+    .profile .buttons {
+        flex-direction: column;
+    }
+
+    .post-content {
+        font-size: 16px;
+    }
+
+    .post-entry {
+        padding: 20px 15px;
+    }
+
+    .entry-header h2 {
+        font-size: 20px;
+    }
+}
