@@ -61,7 +61,8 @@ main() {
 
   # Build the site
   echo "Building the site"
-  hugo build --gc --minify --baseURL "https://${VERCEL_PROJECT_PRODUCTION_URL}"
+  #hugo build --gc --minify --baseURL "https://${VERCEL_PROJECT_PRODUCTION_URL}"
+  hugo build --gc --minify
 
 }
 
