@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="light">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>玩转Claude Code（一）：基本介绍与环境搭建 | ByteZhou的个人空间</title>
+<meta name="keywords" content="">
+<meta name="description" content="跟着我一起玩转Claude Code！
+1、基本介绍
+Claude Code是Anthropic公司推出的CLI AI Agent（命令行AI智能体），最初锚向的是AI Coding工具，但发展到现在，我对它的理解，已经不仅仅只是一个&quot;编程Agent&quot;了。
+纵观市面上主流的 AI Coding 工具，GitHub Copilot、Windsurf、Cursor等，百花齐放。&ldquo;御三家&rdquo; Codex（OpenAI的）、Gemini（Google的）、Claude Code（Anthropic的）均有各自的特点和擅长的赛道，但个人体验后，我愿称Claude Code为&quot;最强&quot;（纯个人观点，非引战）。
+Claude Code的核心设计理念就是一个**&ldquo;自主自治的工作流引擎&rdquo;**，它能从整体上理解项目全局上下文，自主规划并执行复杂的端到端任务，拥有Hooks、Commands、Skills、MCP等丰富的自定义扩展能力，是团队中不可或缺的&quot;自己搬砖的虚拟成员&quot;。
+
+缔造了&quot;事实标准&quot;：Claude Code可以说是CLI AI Agent领域的开创者，许多&quot;游戏规则&quot;都是它定的，比如 &ldquo;@&ldquo;注入上下文、&rdquo;!&ldquo;执行shell命令、&rdquo;/&ldquo;发起斜杠命令等，后续的工具大多都借鉴效仿了其设计。
+实现了完整方法论：Claude Code将SDD方法论实现得最完整、最体系化，包括上下文管理、安全限制、MCP扩展等。掌握了它，也就掌握了底层的使用思想，可以无缝切换到其他工具。
+拥有最繁荣的生态：Claude Code凭借其强大的先发优势形成了正向的生态循环，吸引大量用户使用，催生出更多第三方工具和更多模型的支持，国内的主流模型都提供了对Claude Code的支持，比如minimax、GLM、Kimi等。掌握了它，你就接入了一个不断发展的AI生态。
+
+AI时代，我认为每个开发者都要掌握Claude Code的使用。但相比开发者而言，我更推荐产品经理来学习Claude Code，一旦你掌控了它，就拥有了一支由&quot;架构师&rdquo;&#43;&ldquo;技术leader&rdquo;&#43;&ldquo;资深研发者们&quot;组成的专业&quot;虚拟研发团队&rdquo;，配合你强大的产品思维，完全可以&quot;一人成军&rdquo;，踏上OPC（一人公司）之路。
+2、环境搭建
+现在正式开始搭建环境，总体思路就是：Claude Code Agent &#43; 国产大模型。
+Anthropic公司原生的大模型真的太贵了，另外，它也封禁了国内ip（通过香港的vpn跳过去好像也不行）。国内用户一般做法是，给Claude Code这辆&quot;超跑&quot;换一个&quot;国产引擎&quot;（国产大模型），它的&quot;驾驶操作&quot;是一样的，无非就是&quot;驾驶体验&quot;要稍差一点，一旦你学会了如何&quot;驾驶&quot;，可以无缝切回它的原生&quot;引擎&quot;。
+2.1 安装Claude Code
+我的环境是macOS，以macOS为例来说明如何安装Claude Code。
+我在macOS中采用Homebrew来安装Claude Code，先安装Homebrew，再用Homebrew来安装Claude Code。
+打开终端，先安装xcode：
+xcode-select --install
+xcode安装后，用官方脚本安装Homebrew：
+/bin/bash -c &#34;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&#34;
+Homebrew安装后，根据终端的提示，把Homebrew的环境变量写到用户的配置里，M芯片的Mac用户执行以下命令：
+echo &#39;eval &#34;$(/opt/homebrew/bin/brew shellenv)&#34;&#39; &gt;&gt; ~/.zshrc
+source ~/.zshrc
+Intel芯片的Mac用户则执行以下命令：
+echo &#39;eval &#34;$(/usr/local/bin/brew shellenv)&#34;&#39; &gt;&gt; ~/.bash_profile
+source ~/.bash_profile
+Homebrew安装好后，可以验证一下是否能用：">
+<meta name="author" content="ByteZhou">
+<link rel="canonical" href="http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%80%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D%E4%B8%8E%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.b2fb3e76a8c11c585aa2c220e844461da3987fd48a6ceb221ea5c631333c5751.css" integrity="sha256-svs&#43;dqjBHFhaosIg6ERGHaOYf9SKbOsiHqXGMTM8V1E=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%80%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D%E4%B8%8E%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    }
+
+</script><meta property="og:url" content="http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%80%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D%E4%B8%8E%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/">
+  <meta property="og:site_name" content="ByteZhou的个人空间">
+  <meta property="og:title" content="玩转Claude Code（一）：基本介绍与环境搭建">
+  <meta property="og:description" content="跟着我一起玩转Claude Code！
+1、基本介绍 Claude Code是Anthropic公司推出的CLI AI Agent（命令行AI智能体），最初锚向的是AI Coding工具，但发展到现在，我对它的理解，已经不仅仅只是一个&#34;编程Agent&#34;了。
+纵观市面上主流的 AI Coding 工具，GitHub Copilot、Windsurf、Cursor等，百花齐放。“御三家” Codex（OpenAI的）、Gemini（Google的）、Claude Code（Anthropic的）均有各自的特点和擅长的赛道，但个人体验后，我愿称Claude Code为&#34;最强&#34;（纯个人观点，非引战）。
+Claude Code的核心设计理念就是一个**“自主自治的工作流引擎”**，它能从整体上理解项目全局上下文，自主规划并执行复杂的端到端任务，拥有Hooks、Commands、Skills、MCP等丰富的自定义扩展能力，是团队中不可或缺的&#34;自己搬砖的虚拟成员&#34;。
+缔造了&#34;事实标准&#34;：Claude Code可以说是CLI AI Agent领域的开创者，许多&#34;游戏规则&#34;都是它定的，比如 “@“注入上下文、”!“执行shell命令、”/“发起斜杠命令等，后续的工具大多都借鉴效仿了其设计。 实现了完整方法论：Claude Code将SDD方法论实现得最完整、最体系化，包括上下文管理、安全限制、MCP扩展等。掌握了它，也就掌握了底层的使用思想，可以无缝切换到其他工具。 拥有最繁荣的生态：Claude Code凭借其强大的先发优势形成了正向的生态循环，吸引大量用户使用，催生出更多第三方工具和更多模型的支持，国内的主流模型都提供了对Claude Code的支持，比如minimax、GLM、Kimi等。掌握了它，你就接入了一个不断发展的AI生态。 AI时代，我认为每个开发者都要掌握Claude Code的使用。但相比开发者而言，我更推荐产品经理来学习Claude Code，一旦你掌控了它，就拥有了一支由&#34;架构师”&#43;“技术leader”&#43;“资深研发者们&#34;组成的专业&#34;虚拟研发团队”，配合你强大的产品思维，完全可以&#34;一人成军”，踏上OPC（一人公司）之路。
+2、环境搭建 现在正式开始搭建环境，总体思路就是：Claude Code Agent &#43; 国产大模型。
+Anthropic公司原生的大模型真的太贵了，另外，它也封禁了国内ip（通过香港的vpn跳过去好像也不行）。国内用户一般做法是，给Claude Code这辆&#34;超跑&#34;换一个&#34;国产引擎&#34;（国产大模型），它的&#34;驾驶操作&#34;是一样的，无非就是&#34;驾驶体验&#34;要稍差一点，一旦你学会了如何&#34;驾驶&#34;，可以无缝切回它的原生&#34;引擎&#34;。
+2.1 安装Claude Code 我的环境是macOS，以macOS为例来说明如何安装Claude Code。
+我在macOS中采用Homebrew来安装Claude Code，先安装Homebrew，再用Homebrew来安装Claude Code。 打开终端，先安装xcode：
+xcode-select --install xcode安装后，用官方脚本安装Homebrew：
+/bin/bash -c &#34;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&#34; Homebrew安装后，根据终端的提示，把Homebrew的环境变量写到用户的配置里，M芯片的Mac用户执行以下命令：
+echo &#39;eval &#34;$(/opt/homebrew/bin/brew shellenv)&#34;&#39; &gt;&gt; ~/.zshrc source ~/.zshrc Intel芯片的Mac用户则执行以下命令：
+echo &#39;eval &#34;$(/usr/local/bin/brew shellenv)&#34;&#39; &gt;&gt; ~/.bash_profile source ~/.bash_profile Homebrew安装好后，可以验证一下是否能用：">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2026-03-23T23:49:40+08:00">
+    <meta property="article:modified_time" content="2026-03-23T23:49:40+08:00">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="玩转Claude Code（一）：基本介绍与环境搭建">
+  <meta name="twitter:description" content="跟着我一起玩转Claude Code！
+1、基本介绍 Claude Code是Anthropic公司推出的CLI AI Agent（命令行AI智能体），最初锚向的是AI Coding工具，但发展到现在，我对它的理解，已经不仅仅只是一个&#34;编程Agent&#34;了。
+纵观市面上主流的 AI Coding 工具，GitHub Copilot、Windsurf、Cursor等，百花齐放。“御三家” Codex（OpenAI的）、Gemini（Google的）、Claude Code（Anthropic的）均有各自的特点和擅长的赛道，但个人体验后，我愿称Claude Code为&#34;最强&#34;（纯个人观点，非引战）。
+Claude Code的核心设计理念就是一个**“自主自治的工作流引擎”**，它能从整体上理解项目全局上下文，自主规划并执行复杂的端到端任务，拥有Hooks、Commands、Skills、MCP等丰富的自定义扩展能力，是团队中不可或缺的&#34;自己搬砖的虚拟成员&#34;。
+缔造了&#34;事实标准&#34;：Claude Code可以说是CLI AI Agent领域的开创者，许多&#34;游戏规则&#34;都是它定的，比如 “@“注入上下文、”!“执行shell命令、”/“发起斜杠命令等，后续的工具大多都借鉴效仿了其设计。 实现了完整方法论：Claude Code将SDD方法论实现得最完整、最体系化，包括上下文管理、安全限制、MCP扩展等。掌握了它，也就掌握了底层的使用思想，可以无缝切换到其他工具。 拥有最繁荣的生态：Claude Code凭借其强大的先发优势形成了正向的生态循环，吸引大量用户使用，催生出更多第三方工具和更多模型的支持，国内的主流模型都提供了对Claude Code的支持，比如minimax、GLM、Kimi等。掌握了它，你就接入了一个不断发展的AI生态。 AI时代，我认为每个开发者都要掌握Claude Code的使用。但相比开发者而言，我更推荐产品经理来学习Claude Code，一旦你掌控了它，就拥有了一支由&#34;架构师”&#43;“技术leader”&#43;“资深研发者们&#34;组成的专业&#34;虚拟研发团队”，配合你强大的产品思维，完全可以&#34;一人成军”，踏上OPC（一人公司）之路。
+2、环境搭建 现在正式开始搭建环境，总体思路就是：Claude Code Agent &#43; 国产大模型。
+Anthropic公司原生的大模型真的太贵了，另外，它也封禁了国内ip（通过香港的vpn跳过去好像也不行）。国内用户一般做法是，给Claude Code这辆&#34;超跑&#34;换一个&#34;国产引擎&#34;（国产大模型），它的&#34;驾驶操作&#34;是一样的，无非就是&#34;驾驶体验&#34;要稍差一点，一旦你学会了如何&#34;驾驶&#34;，可以无缝切回它的原生&#34;引擎&#34;。
+2.1 安装Claude Code 我的环境是macOS，以macOS为例来说明如何安装Claude Code。
+我在macOS中采用Homebrew来安装Claude Code，先安装Homebrew，再用Homebrew来安装Claude Code。 打开终端，先安装xcode：
+xcode-select --install xcode安装后，用官方脚本安装Homebrew：
+/bin/bash -c &#34;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&#34; Homebrew安装后，根据终端的提示，把Homebrew的环境变量写到用户的配置里，M芯片的Mac用户执行以下命令：
+echo &#39;eval &#34;$(/opt/homebrew/bin/brew shellenv)&#34;&#39; &gt;&gt; ~/.zshrc source ~/.zshrc Intel芯片的Mac用户则执行以下命令：
+echo &#39;eval &#34;$(/usr/local/bin/brew shellenv)&#34;&#39; &gt;&gt; ~/.bash_profile source ~/.bash_profile Homebrew安装好后，可以验证一下是否能用：">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "http://localhost:1313/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "玩转Claude Code（一）：基本介绍与环境搭建",
+      "item": "http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%80%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D%E4%B8%8E%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "玩转Claude Code（一）：基本介绍与环境搭建",
+  "name": "玩转Claude Code（一）：基本介绍与环境搭建",
+  "description": "跟着我一起玩转Claude Code！\n1、基本介绍 Claude Code是Anthropic公司推出的CLI AI Agent（命令行AI智能体），最初锚向的是AI Coding工具，但发展到现在，我对它的理解，已经不仅仅只是一个\u0026quot;编程Agent\u0026quot;了。\n纵观市面上主流的 AI Coding 工具，GitHub Copilot、Windsurf、Cursor等，百花齐放。\u0026ldquo;御三家\u0026rdquo; Codex（OpenAI的）、Gemini（Google的）、Claude Code（Anthropic的）均有各自的特点和擅长的赛道，但个人体验后，我愿称Claude Code为\u0026quot;最强\u0026quot;（纯个人观点，非引战）。\nClaude Code的核心设计理念就是一个**\u0026ldquo;自主自治的工作流引擎\u0026rdquo;**，它能从整体上理解项目全局上下文，自主规划并执行复杂的端到端任务，拥有Hooks、Commands、Skills、MCP等丰富的自定义扩展能力，是团队中不可或缺的\u0026quot;自己搬砖的虚拟成员\u0026quot;。\n缔造了\u0026quot;事实标准\u0026quot;：Claude Code可以说是CLI AI Agent领域的开创者，许多\u0026quot;游戏规则\u0026quot;都是它定的，比如 \u0026ldquo;@\u0026ldquo;注入上下文、\u0026rdquo;!\u0026ldquo;执行shell命令、\u0026rdquo;/\u0026ldquo;发起斜杠命令等，后续的工具大多都借鉴效仿了其设计。 实现了完整方法论：Claude Code将SDD方法论实现得最完整、最体系化，包括上下文管理、安全限制、MCP扩展等。掌握了它，也就掌握了底层的使用思想，可以无缝切换到其他工具。 拥有最繁荣的生态：Claude Code凭借其强大的先发优势形成了正向的生态循环，吸引大量用户使用，催生出更多第三方工具和更多模型的支持，国内的主流模型都提供了对Claude Code的支持，比如minimax、GLM、Kimi等。掌握了它，你就接入了一个不断发展的AI生态。 AI时代，我认为每个开发者都要掌握Claude Code的使用。但相比开发者而言，我更推荐产品经理来学习Claude Code，一旦你掌控了它，就拥有了一支由\u0026quot;架构师\u0026rdquo;+\u0026ldquo;技术leader\u0026rdquo;+\u0026ldquo;资深研发者们\u0026quot;组成的专业\u0026quot;虚拟研发团队\u0026rdquo;，配合你强大的产品思维，完全可以\u0026quot;一人成军\u0026rdquo;，踏上OPC（一人公司）之路。\n2、环境搭建 现在正式开始搭建环境，总体思路就是：Claude Code Agent + 国产大模型。\nAnthropic公司原生的大模型真的太贵了，另外，它也封禁了国内ip（通过香港的vpn跳过去好像也不行）。国内用户一般做法是，给Claude Code这辆\u0026quot;超跑\u0026quot;换一个\u0026quot;国产引擎\u0026quot;（国产大模型），它的\u0026quot;驾驶操作\u0026quot;是一样的，无非就是\u0026quot;驾驶体验\u0026quot;要稍差一点，一旦你学会了如何\u0026quot;驾驶\u0026quot;，可以无缝切回它的原生\u0026quot;引擎\u0026quot;。\n2.1 安装Claude Code 我的环境是macOS，以macOS为例来说明如何安装Claude Code。\n我在macOS中采用Homebrew来安装Claude Code，先安装Homebrew，再用Homebrew来安装Claude Code。 打开终端，先安装xcode：\nxcode-select --install xcode安装后，用官方脚本安装Homebrew：\n/bin/bash -c \u0026#34;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\u0026#34; Homebrew安装后，根据终端的提示，把Homebrew的环境变量写到用户的配置里，M芯片的Mac用户执行以下命令：\necho \u0026#39;eval \u0026#34;$(/opt/homebrew/bin/brew shellenv)\u0026#34;\u0026#39; \u0026gt;\u0026gt; ~/.zshrc source ~/.zshrc Intel芯片的Mac用户则执行以下命令：\necho \u0026#39;eval \u0026#34;$(/usr/local/bin/brew shellenv)\u0026#34;\u0026#39; \u0026gt;\u0026gt; ~/.bash_profile source ~/.bash_profile Homebrew安装好后，可以验证一下是否能用：\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "跟着我一起玩转Claude Code！\n1、基本介绍 Claude Code是Anthropic公司推出的CLI AI Agent（命令行AI智能体），最初锚向的是AI Coding工具，但发展到现在，我对它的理解，已经不仅仅只是一个\"编程Agent\"了。\n纵观市面上主流的 AI Coding 工具，GitHub Copilot、Windsurf、Cursor等，百花齐放。“御三家” Codex（OpenAI的）、Gemini（Google的）、Claude Code（Anthropic的）均有各自的特点和擅长的赛道，但个人体验后，我愿称Claude Code为\"最强\"（纯个人观点，非引战）。\nClaude Code的核心设计理念就是一个**“自主自治的工作流引擎”**，它能从整体上理解项目全局上下文，自主规划并执行复杂的端到端任务，拥有Hooks、Commands、Skills、MCP等丰富的自定义扩展能力，是团队中不可或缺的\"自己搬砖的虚拟成员\"。\n缔造了\"事实标准\"：Claude Code可以说是CLI AI Agent领域的开创者，许多\"游戏规则\"都是它定的，比如 “@“注入上下文、”!“执行shell命令、”/“发起斜杠命令等，后续的工具大多都借鉴效仿了其设计。 实现了完整方法论：Claude Code将SDD方法论实现得最完整、最体系化，包括上下文管理、安全限制、MCP扩展等。掌握了它，也就掌握了底层的使用思想，可以无缝切换到其他工具。 拥有最繁荣的生态：Claude Code凭借其强大的先发优势形成了正向的生态循环，吸引大量用户使用，催生出更多第三方工具和更多模型的支持，国内的主流模型都提供了对Claude Code的支持，比如minimax、GLM、Kimi等。掌握了它，你就接入了一个不断发展的AI生态。 AI时代，我认为每个开发者都要掌握Claude Code的使用。但相比开发者而言，我更推荐产品经理来学习Claude Code，一旦你掌控了它，就拥有了一支由\"架构师”+“技术leader”+“资深研发者们\"组成的专业\"虚拟研发团队”，配合你强大的产品思维，完全可以\"一人成军”，踏上OPC（一人公司）之路。\n2、环境搭建 现在正式开始搭建环境，总体思路就是：Claude Code Agent + 国产大模型。\nAnthropic公司原生的大模型真的太贵了，另外，它也封禁了国内ip（通过香港的vpn跳过去好像也不行）。国内用户一般做法是，给Claude Code这辆\"超跑\"换一个\"国产引擎\"（国产大模型），它的\"驾驶操作\"是一样的，无非就是\"驾驶体验\"要稍差一点，一旦你学会了如何\"驾驶\"，可以无缝切回它的原生\"引擎\"。\n2.1 安装Claude Code 我的环境是macOS，以macOS为例来说明如何安装Claude Code。\n我在macOS中采用Homebrew来安装Claude Code，先安装Homebrew，再用Homebrew来安装Claude Code。 打开终端，先安装xcode：\nxcode-select --install xcode安装后，用官方脚本安装Homebrew：\n/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\" Homebrew安装后，根据终端的提示，把Homebrew的环境变量写到用户的配置里，M芯片的Mac用户执行以下命令：\necho 'eval \"$(/opt/homebrew/bin/brew shellenv)\"' \u003e\u003e ~/.zshrc source ~/.zshrc Intel芯片的Mac用户则执行以下命令：\necho 'eval \"$(/usr/local/bin/brew shellenv)\"' \u003e\u003e ~/.bash_profile source ~/.bash_profile Homebrew安装好后，可以验证一下是否能用：\nbrew --version 成功输出Homebrew版本，就说明安好了。\n接下来就是用Homebrew安装Claude Code了，在终端输入如下命令：\nbrew install --cask claude-code 等待安装完成，这个过程有点长，跟网络状况有关，另外，可以先\"科学上网\"（开vpn翻墙），再执行安装命令。\n安装完成后，验证一下Claude Code是否ok：\nclaude --version 成功输出claude版本号，本次安装就顺利结束了。\n特别说明：\n安装Homebrew时，可以使用国内镜像源加速安装过程，具体命令在豆包、元宝等AI工具中搜\"如何使用国内镜像源安装Homebrew\"，这里就不详述了。 Linux用户安装Homebrew的方式，和macOS不太一样，也可以在豆包等AI工具中搜\" Linux用户如何安装Homebrew\"，有详细的安装教程，这里也不再展开。安好Homebrew后，Linux中用Homebrew安装Claude Code的方式，和macOS就一样了。 Claude Code官方对macOS/Linux/Windows提供了原生安装方式（官方推荐），国内因为封禁的缘故用不了，看能否通过海外vpn代理来使用官方的原生安装方式（我没试过），我把链接贴在这儿：https://code.claude.com/docs/en/setup#native-install-recommended，有通过原生方式成功安装Claude Code的朋友，可以在评论区分享一下。 Claude Code官方已经声明，npm安装方式已经弃用了，国内Windows用户可以尝试使用npm方式安装Claude Code的历史版本，在元宝等AI工具中搜\"国内Windows用户如何安装Claude Code\"，也有详细的教程。 2.2 切换国产大模型 现在，来为这辆\"超跑\"切换\"国产引擎\"。\n以minimax为例（目前我用的国产大模型），首先，你得先在minimax注册一个账户（https://minimaxi.com）；注册完成后，去minimax的\"接口秘钥\"管理页面（https://platform.minimaxi.com/user-center/basic-information/interface-key）创建一个API key，这个API key，就是你要配置在Claude Code中的密钥，也就是你的\"车钥匙\"，请务必妥善保管，不要泄露。\n建议（非广告）：个人建议订阅minimax的Token Plan套餐，性价比高，量大管饱，有效缓解\"token hungry\"。这是我的邀请链接（9折）https://platform.minimaxi.com/subscribe/token-plan?code=9BE5kxxIhC\u0026source=link，按需购买。\n接下来，配置Claude Code。\n（1）新增或编辑 settings.json 文件\nmacOS/Linux的文件路径为：\"~/.claude/settings.json\"\nWindows的文件路径为：“用户目录/.claude/settings.json”\n在 settings.json 中添加如下内容：\n1 2 3 4 5 6 7 8 9 10 11 { \"env\": { \"ANTHROPIC_AUTH_TOKEN\": \"MINIMAX_API_KEY\", \"ANTHROPIC_BASE_URL\": \"https://api.minimaxi.com/anthropic\", \"API_TIMEOUT_MS\": \"3000000\", \"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC\": \"1\", \"ANTHROPIC_DEFAULT_HAIKU_MODEL\": \"MiniMax-M2.7\", \"ANTHROPIC_DEFAULT_SONNET_MODEL\": \"MiniMax-M2.7\", \"ANTHROPIC_DEFAULT_OPUS_MODEL\": \"MiniMax-M2.7\" } } （2）新增或编辑 .claude.json 文件\nmacOS/Linux的文件路径为：\"~/.claude.json\"\nWindows的文件路径为：“用户目录/.claude.json”\n在 .claude.json 中添加如下内容：\n1 2 3 { \"hasCompletedOnboarding\": true } 最后，我们来验证 “Claude Code + 国产大模型” 的配置是否成功。\n打开终端，创建一个空目录，切进去，输入下面的命令启动Claude Code：\nclaude 选择\"信任当前文件夹\"，最终看到Claude Code的交互式工作界面：\n输入 “/status” 命令，可以查看当前的模型信息：\n可以看到，默认模型已经是MiniMax-M2.7，我们再输入一句话，看看Claude Code能否思考后回答：\nClaude Code正常回复了，至此，环境搭建完成。\ntips：在Claude Code回话中，用 “/config” 命令来进行一些配置的简单调整，以适配个性化需求，请自行探索。\n下一篇，将介绍Claude Code最基本的交互范式，也是我们日常使用中与Claude Code进行人机协作的通用模式。\n感谢你点开这篇文章，欢迎关注我的公众号：10年码农，纯技术分享，一起在AI时代探索未来！\n客官您满意的话，感谢打赏。\n",
+  "wordCount" : "194",
+  "inLanguage": "en",
+  "datePublished": "2026-03-23T23:49:40+08:00",
+  "dateModified": "2026-03-23T23:49:40+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "ByteZhou"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%80%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D%E4%B8%8E%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ByteZhou的个人空间",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://localhost:1313/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="ByteZhou的个人空间 (Alt + H)">ByteZhou的个人空间</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:1313/posts/" title="文章">
+                    <span>文章</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/categories/" title="分类">
+                    <span>分类</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/tags/" title="标签">
+                    <span>标签</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:1313/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:1313/posts/">Posts</a></div>
+    <h1 class="post-title entry-hint-parent">
+      玩转Claude Code（一）：基本介绍与环境搭建
+    </h1>
+    <div class="post-meta"><span title='2026-03-23 23:49:40 +0800 CST'>March 23, 2026</span>&nbsp;·&nbsp;<span>ByteZhou</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p><strong>跟着我一起玩转Claude Code！</strong></p>
+<h1 id="1基本介绍">1、基本介绍<a hidden class="anchor" aria-hidden="true" href="#1基本介绍">#</a></h1>
+<p>Claude Code是Anthropic公司推出的CLI AI Agent（命令行AI智能体），最初锚向的是AI Coding工具，但发展到现在，我对它的理解，已经不仅仅只是一个&quot;编程Agent&quot;了。</p>
+<p>纵观市面上主流的 AI Coding 工具，GitHub Copilot、Windsurf、Cursor等，百花齐放。&ldquo;御三家&rdquo; Codex（OpenAI的）、Gemini（Google的）、Claude Code（Anthropic的）均有各自的特点和擅长的赛道，但个人体验后，<strong>我愿称Claude Code为&quot;最强&quot;</strong>（纯个人观点，非引战）。</p>
+<p>Claude Code的核心设计理念就是一个**&ldquo;自主自治的工作流引擎&rdquo;**，它能从整体上理解项目全局上下文，自主规划并执行复杂的端到端任务，拥有Hooks、Commands、Skills、MCP等丰富的自定义扩展能力，是团队中不可或缺的&quot;自己搬砖的虚拟成员&quot;。</p>
+<ul>
+<li><strong>缔造了&quot;事实标准&quot;</strong>：Claude Code可以说是CLI AI Agent领域的开创者，许多&quot;游戏规则&quot;都是它定的，比如 &ldquo;@&ldquo;注入上下文、&rdquo;!&ldquo;执行shell命令、&rdquo;/&ldquo;发起斜杠命令等，后续的工具大多都借鉴效仿了其设计。</li>
+<li><strong>实现了完整方法论</strong>：Claude Code将SDD方法论实现得最完整、最体系化，包括上下文管理、安全限制、MCP扩展等。掌握了它，也就掌握了底层的使用思想，可以无缝切换到其他工具。</li>
+<li><strong>拥有最繁荣的生态</strong>：Claude Code凭借其强大的先发优势形成了正向的生态循环，吸引大量用户使用，催生出更多第三方工具和更多模型的支持，国内的主流模型都提供了对Claude Code的支持，比如minimax、GLM、Kimi等。掌握了它，你就接入了一个不断发展的AI生态。</li>
+</ul>
+<p>AI时代，我认为每个开发者都要掌握Claude Code的使用。但相比开发者而言，<strong>我更推荐产品经理来学习Claude Code，一旦你掌控了它，就拥有了一支由&quot;架构师&rdquo;+&ldquo;技术leader&rdquo;+&ldquo;资深研发者们&quot;组成的专业&quot;虚拟研发团队&rdquo;，配合你强大的产品思维，完全可以&quot;一人成军&rdquo;，踏上OPC（一人公司）之路</strong>。</p>
+<h1 id="2环境搭建">2、环境搭建<a hidden class="anchor" aria-hidden="true" href="#2环境搭建">#</a></h1>
+<p>现在正式开始搭建环境，总体思路就是：<strong>Claude Code Agent + 国产大模型</strong>。</p>
+<p>Anthropic公司原生的大模型真的太贵了，另外，它也封禁了国内ip（通过香港的vpn跳过去好像也不行）。国内用户一般做法是，给Claude Code这辆&quot;超跑&quot;换一个&quot;国产引擎&quot;（国产大模型），它的&quot;驾驶操作&quot;是一样的，无非就是&quot;驾驶体验&quot;要稍差一点，一旦你学会了如何&quot;驾驶&quot;，可以无缝切回它的原生&quot;引擎&quot;。</p>
+<h2 id="21-安装claude-code">2.1 安装Claude Code<a hidden class="anchor" aria-hidden="true" href="#21-安装claude-code">#</a></h2>
+<p>我的环境是macOS，以macOS为例来说明如何安装Claude Code。</p>
+<p>我在macOS中采用Homebrew来安装Claude Code，先安装Homebrew，再用Homebrew来安装Claude Code。
+打开终端，先安装xcode：</p>
+<pre tabindex="0"><code>xcode-select --install
+</code></pre><p>xcode安装后，用官方脚本安装Homebrew：</p>
+<pre tabindex="0"><code>/bin/bash -c &#34;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&#34;
+</code></pre><p>Homebrew安装后，根据终端的提示，把Homebrew的环境变量写到用户的配置里，M芯片的Mac用户执行以下命令：</p>
+<pre tabindex="0"><code>echo &#39;eval &#34;$(/opt/homebrew/bin/brew shellenv)&#34;&#39; &gt;&gt; ~/.zshrc
+source ~/.zshrc
+</code></pre><p>Intel芯片的Mac用户则执行以下命令：</p>
+<pre tabindex="0"><code>echo &#39;eval &#34;$(/usr/local/bin/brew shellenv)&#34;&#39; &gt;&gt; ~/.bash_profile
+source ~/.bash_profile
+</code></pre><p>Homebrew安装好后，可以验证一下是否能用：</p>
+<pre tabindex="0"><code>brew --version
+</code></pre><p>成功输出Homebrew版本，就说明安好了。</p>
+<p>接下来就是用Homebrew安装Claude Code了，在终端输入如下命令：</p>
+<pre tabindex="0"><code>brew install --cask claude-code
+</code></pre><p>等待安装完成，这个过程有点长，跟网络状况有关，另外，可以先&quot;科学上网&quot;（开vpn翻墙），再执行安装命令。</p>
+<p>安装完成后，验证一下Claude Code是否ok：</p>
+<pre tabindex="0"><code>claude --version
+</code></pre><p>成功输出claude版本号，本次安装就顺利结束了。</p>
+<p><strong>特别说明：</strong></p>
+<ul>
+<li>安装Homebrew时，可以使用国内镜像源加速安装过程，具体命令在豆包、元宝等AI工具中搜&quot;如何使用国内镜像源安装Homebrew&quot;，这里就不详述了。</li>
+<li>Linux用户安装Homebrew的方式，和macOS不太一样，也可以在豆包等AI工具中搜&quot;
+Linux用户如何安装Homebrew&quot;，有详细的安装教程，这里也不再展开。安好Homebrew后，Linux中用Homebrew安装Claude Code的方式，和macOS就一样了。</li>
+<li>Claude Code官方对macOS/Linux/Windows提供了原生安装方式（官方推荐），国内因为封禁的缘故用不了，看能否通过海外vpn代理来使用官方的原生安装方式（我没试过），我把链接贴在这儿：https://code.claude.com/docs/en/setup#native-install-recommended，有通过原生方式成功安装Claude Code的朋友，可以在评论区分享一下。</li>
+<li>Claude Code官方已经声明，<strong>npm安装方式已经弃用了</strong>，国内Windows用户可以尝试使用npm方式安装Claude Code的历史版本，在元宝等AI工具中搜&quot;国内Windows用户如何安装Claude Code&quot;，也有详细的教程。</li>
+</ul>
+<h2 id="22-切换国产大模型">2.2 切换国产大模型<a hidden class="anchor" aria-hidden="true" href="#22-切换国产大模型">#</a></h2>
+<p>现在，来为这辆&quot;超跑&quot;切换&quot;国产引擎&quot;。</p>
+<p>以minimax为例（目前我用的国产大模型），首先，你得先在minimax注册一个账户（https://minimaxi.com）；注册完成后，去minimax的&quot;接口秘钥&quot;管理页面（https://platform.minimaxi.com/user-center/basic-information/interface-key）创建一个API key，这个API key，就是你要配置在Claude Code中的密钥，也就是你的&quot;车钥匙&quot;，请务必妥善保管，不要泄露。</p>
+<p><img alt="cc_1_1.jpg" loading="lazy" src="/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%80%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D%E4%B8%8E%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/cc_1_1.jpg"></p>
+<p><strong>建议（非广告）</strong>：个人建议订阅minimax的Token Plan套餐，性价比高，量大管饱，有效缓解&quot;token hungry&quot;。这是我的邀请链接（9折）https://platform.minimaxi.com/subscribe/token-plan?code=9BE5kxxIhC&amp;source=link，按需购买。</p>
+<p>接下来，配置Claude Code。</p>
+<p><strong>（1）新增或编辑 settings.json 文件</strong></p>
+<p>macOS/Linux的文件路径为：&quot;~/.claude/settings.json&quot;</p>
+<p>Windows的文件路径为：&ldquo;用户目录/.claude/settings.json&rdquo;</p>
+<p>在 settings.json 中添加如下内容：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;env&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;ANTHROPIC_AUTH_TOKEN&#34;</span><span class="p">:</span> <span class="s2">&#34;MINIMAX_API_KEY&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;ANTHROPIC_BASE_URL&#34;</span><span class="p">:</span> <span class="s2">&#34;https://api.minimaxi.com/anthropic&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;API_TIMEOUT_MS&#34;</span><span class="p">:</span> <span class="s2">&#34;3000000&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC&#34;</span><span class="p">:</span> <span class="s2">&#34;1&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;ANTHROPIC_DEFAULT_HAIKU_MODEL&#34;</span><span class="p">:</span> <span class="s2">&#34;MiniMax-M2.7&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;ANTHROPIC_DEFAULT_SONNET_MODEL&#34;</span><span class="p">:</span> <span class="s2">&#34;MiniMax-M2.7&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;ANTHROPIC_DEFAULT_OPUS_MODEL&#34;</span><span class="p">:</span> <span class="s2">&#34;MiniMax-M2.7&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>（2）新增或编辑 .claude.json 文件</strong></p>
+<p>macOS/Linux的文件路径为：&quot;~/.claude.json&quot;</p>
+<p>Windows的文件路径为：&ldquo;用户目录/.claude.json&rdquo;</p>
+<p>在 .claude.json 中添加如下内容：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;hasCompletedOnboarding&#34;</span><span class="p">:</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>最后，我们来验证 &ldquo;Claude Code + 国产大模型&rdquo; 的配置是否成功。</p>
+<p>打开终端，创建一个空目录，切进去，输入下面的命令启动Claude Code：</p>
+<pre tabindex="0"><code>claude
+</code></pre><p>选择&quot;信任当前文件夹&quot;，最终看到Claude Code的交互式工作界面：</p>
+<p><img alt="cc_1_2.jpg" loading="lazy" src="/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%80%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D%E4%B8%8E%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/cc_1_2.jpg"></p>
+<p>输入 &ldquo;/status&rdquo; 命令，可以查看当前的模型信息：</p>
+<p><img alt="cc_1_3.jpg" loading="lazy" src="/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%80%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D%E4%B8%8E%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/cc_1_3.jpg"></p>
+<p>可以看到，默认模型已经是MiniMax-M2.7，我们再输入一句话，看看Claude Code能否思考后回答：</p>
+<p><img alt="cc_1_4.jpg" loading="lazy" src="/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%80%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D%E4%B8%8E%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/cc_1_4.jpg"></p>
+<p>Claude Code正常回复了，至此，环境搭建完成。</p>
+<p><strong>tips</strong>：在Claude Code回话中，用 &ldquo;/config&rdquo; 命令来进行一些配置的简单调整，以适配个性化需求，请自行探索。</p>
+<p><img alt="cc_1_5.jpg" loading="lazy" src="/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%80%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D%E4%B8%8E%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/cc_1_5.jpg"></p>
+<p>下一篇，将介绍Claude Code最基本的交互范式，也是我们日常使用中与Claude Code进行人机协作的通用模式。</p>
+<hr>
+<p><strong>感谢你点开这篇文章，欢迎关注我的公众号：10年码农，纯技术分享，一起在AI时代探索未来！</strong></p>
+<p><img alt="公众号" loading="lazy" src="/images/wechat.jpg"></p>
+<hr>
+<p><strong>客官您满意的话，感谢打赏。</strong></p>
+<p><img alt="打赏" loading="lazy" src="/images/pay.jpg"></p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+<nav class="paginav">
+  <a class="prev" href="http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%BA%8C%E5%9F%BA%E6%9C%AC%E4%BA%A4%E4%BA%92%E8%8C%83%E5%BC%8F@%E5%92%8C/">
+    <span class="title">« Prev</span>
+    <br>
+    <span>玩转Claude Code（二）：基本交互范式&#34;@&#34;和&#34;!&#34;</span>
+  </a>
+  <a class="next" href="http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%B8%89%E4%BB%BB%E5%8A%A1%E6%8B%86%E8%A7%A3%E5%8F%8A%E8%87%AA%E5%8A%A8%E5%AE%9E%E7%8E%B0/">
+    <span class="title">Next »</span>
+    <br>
+    <span>基于Claude Code的SDD实战（三）：任务拆解及自动实现</span>
+  </a>
+</nav>
+
+
+<ul class="share-buttons">
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code（一）：基本介绍与环境搭建 on x"
+            href="https://x.com/intent/tweet/?text=%e7%8e%a9%e8%bd%acClaude%20Code%ef%bc%88%e4%b8%80%ef%bc%89%ef%bc%9a%e5%9f%ba%e6%9c%ac%e4%bb%8b%e7%bb%8d%e4%b8%8e%e7%8e%af%e5%a2%83%e6%90%ad%e5%bb%ba&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B8%2580%25E5%259F%25BA%25E6%259C%25AC%25E4%25BB%258B%25E7%25BB%258D%25E4%25B8%258E%25E7%258E%25AF%25E5%25A2%2583%25E6%2590%25AD%25E5%25BB%25BA%2f&amp;hashtags=">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M512 62.554 L 512 449.446 C 512 483.97 483.97 512 449.446 512 L 62.554 512 C 28.03 512 0 483.97 0 449.446 L 0 62.554 C 0 28.03 28.029 0 62.554 0 L 449.446 0 C 483.971 0 512 28.03 512 62.554 Z M 269.951 190.75 L 182.567 75.216 L 56 75.216 L 207.216 272.95 L 63.9 436.783 L 125.266 436.783 L 235.9 310.383 L 332.567 436.783 L 456 436.783 L 298.367 228.367 L 432.367 75.216 L 371.033 75.216 Z M 127.633 110 L 164.101 110 L 383.481 400.065 L 349.5 400.065 Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code（一）：基本介绍与环境搭建 on linkedin"
+            href="https://www.linkedin.com/shareArticle?mini=true&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B8%2580%25E5%259F%25BA%25E6%259C%25AC%25E4%25BB%258B%25E7%25BB%258D%25E4%25B8%258E%25E7%258E%25AF%25E5%25A2%2583%25E6%2590%25AD%25E5%25BB%25BA%2f&amp;title=%e7%8e%a9%e8%bd%acClaude%20Code%ef%bc%88%e4%b8%80%ef%bc%89%ef%bc%9a%e5%9f%ba%e6%9c%ac%e4%bb%8b%e7%bb%8d%e4%b8%8e%e7%8e%af%e5%a2%83%e6%90%ad%e5%bb%ba&amp;summary=%e7%8e%a9%e8%bd%acClaude%20Code%ef%bc%88%e4%b8%80%ef%bc%89%ef%bc%9a%e5%9f%ba%e6%9c%ac%e4%bb%8b%e7%bb%8d%e4%b8%8e%e7%8e%af%e5%a2%83%e6%90%ad%e5%bb%ba&amp;source=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B8%2580%25E5%259F%25BA%25E6%259C%25AC%25E4%25BB%258B%25E7%25BB%258D%25E4%25B8%258E%25E7%258E%25AF%25E5%25A2%2583%25E6%2590%25AD%25E5%25BB%25BA%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code（一）：基本介绍与环境搭建 on reddit"
+            href="https://reddit.com/submit?url=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B8%2580%25E5%259F%25BA%25E6%259C%25AC%25E4%25BB%258B%25E7%25BB%258D%25E4%25B8%258E%25E7%258E%25AF%25E5%25A2%2583%25E6%2590%25AD%25E5%25BB%25BA%2f&title=%e7%8e%a9%e8%bd%acClaude%20Code%ef%bc%88%e4%b8%80%ef%bc%89%ef%bc%9a%e5%9f%ba%e6%9c%ac%e4%bb%8b%e7%bb%8d%e4%b8%8e%e7%8e%af%e5%a2%83%e6%90%ad%e5%bb%ba">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code（一）：基本介绍与环境搭建 on facebook"
+            href="https://facebook.com/sharer/sharer.php?u=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B8%2580%25E5%259F%25BA%25E6%259C%25AC%25E4%25BB%258B%25E7%25BB%258D%25E4%25B8%258E%25E7%258E%25AF%25E5%25A2%2583%25E6%2590%25AD%25E5%25BB%25BA%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code（一）：基本介绍与环境搭建 on whatsapp"
+            href="https://api.whatsapp.com/send?text=%e7%8e%a9%e8%bd%acClaude%20Code%ef%bc%88%e4%b8%80%ef%bc%89%ef%bc%9a%e5%9f%ba%e6%9c%ac%e4%bb%8b%e7%bb%8d%e4%b8%8e%e7%8e%af%e5%a2%83%e6%90%ad%e5%bb%ba%20-%20http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B8%2580%25E5%259F%25BA%25E6%259C%25AC%25E4%25BB%258B%25E7%25BB%258D%25E4%25B8%258E%25E7%258E%25AF%25E5%25A2%2583%25E6%2590%25AD%25E5%25BB%25BA%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code（一）：基本介绍与环境搭建 on telegram"
+            href="https://telegram.me/share/url?text=%e7%8e%a9%e8%bd%acClaude%20Code%ef%bc%88%e4%b8%80%ef%bc%89%ef%bc%9a%e5%9f%ba%e6%9c%ac%e4%bb%8b%e7%bb%8d%e4%b8%8e%e7%8e%af%e5%a2%83%e6%90%ad%e5%bb%ba&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B8%2580%25E5%259F%25BA%25E6%259C%25AC%25E4%25BB%258B%25E7%25BB%258D%25E4%25B8%258E%25E7%258E%25AF%25E5%25A2%2583%25E6%2590%25AD%25E5%25BB%25BA%2f">
+            <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code（一）：基本介绍与环境搭建 on ycombinator"
+            href="https://news.ycombinator.com/submitlink?t=%e7%8e%a9%e8%bd%acClaude%20Code%ef%bc%88%e4%b8%80%ef%bc%89%ef%bc%9a%e5%9f%ba%e6%9c%ac%e4%bb%8b%e7%bb%8d%e4%b8%8e%e7%8e%af%e5%a2%83%e6%90%ad%e5%bb%ba&u=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B8%2580%25E5%259F%25BA%25E6%259C%25AC%25E4%25BB%258B%25E7%25BB%258D%25E4%25B8%258E%25E7%258E%25AF%25E5%25A2%2583%25E6%2590%25AD%25E5%25BB%25BA%2f">
+            <svg version="1.1" xml:space="preserve" width="30px" height="30px" viewBox="0 0 512 512" fill="currentColor"
+                xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+                <path
+                    d="M449.446 0C483.971 0 512 28.03 512 62.554L512 449.446C512 483.97 483.97 512 449.446 512L62.554 512C28.03 512 0 483.97 0 449.446L0 62.554C0 28.03 28.029 0 62.554 0L449.446 0ZM183.8767 87.9921H121.8427L230.6673 292.4508V424.0079H281.3328V292.4508L390.1575 87.9921H328.1233L256 238.2489z" />
+            </svg>
+        </a>
+    </li>
+</ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://localhost:1313/">ByteZhou的个人空间</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

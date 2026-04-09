@@ -82,6 +82,863 @@
 &lt;p&gt;还有那些以为&amp;quot;学会AI就安全了&amp;quot;的人。当所有人都会用AI的时候，会用的价值就是零。&lt;/p&gt;</description>
     </item>
     <item>
+      <title>&#34;古法编程&#34;真的一去不复返了...</title>
+      <link>http://localhost:1313/posts/%E5%8F%A4%E6%B3%95%E7%BC%96%E7%A8%8B%E7%9C%9F%E7%9A%84%E4%B8%80%E5%8E%BB%E4%B8%8D%E5%A4%8D%E8%BF%94%E4%BA%86.../</link>
+      <pubDate>Fri, 03 Apr 2026 15:13:11 +0800</pubDate>
+      <guid>http://localhost:1313/posts/%E5%8F%A4%E6%B3%95%E7%BC%96%E7%A8%8B%E7%9C%9F%E7%9A%84%E4%B8%80%E5%8E%BB%E4%B8%8D%E5%A4%8D%E8%BF%94%E4%BA%86.../</guid>
+      <description>&lt;p&gt;这两天晚上抽空用Claude Code搓了一个&lt;code&gt;视频智能文稿生成器&lt;/code&gt;，大概功能就是，&lt;strong&gt;把主流平台的视频扒下来、转成文字稿，再到大模型里过一遍，顺便从视频里抽几帧，合成一个智能图文稿（还可以提取核心信息）&lt;/strong&gt;，自己再润色润色，就可以拿到其他内容平台去&amp;quot;灌水&amp;quot;发布了。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;视频链接
+    │
+    ▼
+┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
+│链接解析 │───▶│音频提取 │───▶│ ASR转写 │───▶│说话人分离│
+└─────────┘    └─────────┘    └─────────┘    └─────────┘
+                                                  │
+                     ┌────────────────────────────┘
+                     ▼
+              ┌───────────┐    ┌────────────┐
+              │  逐字稿输出 │    │ LLM文章生成 │
+              └───────────┘    └────────────┘
+                                       │
+                              ┌────────┴────────┐
+                              ▼                 ▼
+                        ┌──────────┐     ┌──────────┐
+                        │ 关键帧提取│     │ 信息结构化│
+                        └──────────┘     └──────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这次我特意选了一个我基本不熟悉的技术栈：&lt;code&gt;node.js&lt;/code&gt;，前、后端都用&lt;code&gt;node.js&lt;/code&gt;，&lt;strong&gt;耗时2晚，输出代码量2w+&lt;/strong&gt;（包括中间有功能变更、bug修复、端到端集成等），涵盖&lt;code&gt;功能代码、单元测试、端到端测试、部署配置脚本&lt;/code&gt;等。&lt;/p&gt;
+&lt;p&gt;我还特意关了Claude Code的&lt;code&gt;plan mode&lt;/code&gt;、没用它&lt;code&gt;Agent-Teams&lt;/code&gt;这种高级功能，只花了2个晚上（8、9个小时左右吧），不得不感叹，&lt;strong&gt;&amp;ldquo;古法编程&amp;quot;真的一去不复返了&amp;hellip;&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;我把整个&lt;code&gt;自然语言编程&lt;/code&gt;的过程分享出来，&lt;strong&gt;包括一些踩坑的思考&lt;/strong&gt;，以供大家参考。&lt;/p&gt;
+&lt;p&gt;另外，整个项目我已经传到github：&lt;code&gt;https://github.com/zhouxinyu1cp/video-text-transformer&lt;/code&gt;，感兴趣的朋友，可以自行查看（包括生成的&lt;code&gt;需求.md&lt;/code&gt;、技术规划&lt;code&gt;plan.md&lt;/code&gt;这些）。&lt;/p&gt;
+&lt;p&gt;整个开发过程，&lt;strong&gt;严格遵循&lt;code&gt;SDD范式&lt;/code&gt;&lt;/strong&gt;，但我没有全程在CC里操作，结合了一些其他工具，省点token。&lt;/p&gt;
+&lt;h1 id=&#34;1功能展示&#34;&gt;1.功能展示&lt;/h1&gt;
+&lt;p&gt;前端界面如下，把一个B站的视频链接扔进去：
+&lt;img src=&#34;gu_1.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;然后解析视频元数据：
+&lt;img src=&#34;gu_2.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;这里的&lt;code&gt;视频标题&lt;/code&gt;、&lt;code&gt;时长&lt;/code&gt;、&lt;code&gt;作者&lt;/code&gt;、&lt;code&gt;封面图&lt;/code&gt; 都和原视频能对应上：
+&lt;img src=&#34;gu_3.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;然后&amp;quot;开始处理&amp;rdquo;，后端去下载视频到本地、提取音频、把音频拿去做语音识别 生成初步的文字稿：
+&lt;img src=&#34;gu_5.png&#34;&gt;
+&lt;img src=&#34;gu_6.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;语音识别功能，是通过我在本地部署的openAI的开源模型Whisper（base模式）提供的，提取出来的原始&amp;quot;逐字稿&amp;quot;的准确率不是那么高，但也有70%、80%左右，和视频原话大致能对得上。&lt;/p&gt;
+&lt;p&gt;这里也可以点&lt;code&gt;下载TXT&lt;/code&gt;、或&lt;code&gt;下载Word&lt;/code&gt;，会把原始逐字稿给下载到本地。&lt;/p&gt;
+&lt;p&gt;然后是&lt;code&gt;智能图文&lt;/code&gt;，后端会把原始逐字稿拿到LLM中优化，同时会从下载下来的原视频中抽几帧，合成一个&lt;code&gt;智能图文稿&lt;/code&gt;：
+&lt;img src=&#34;gu_7.png&#34;&gt;
+&lt;img src=&#34;gu_8.png&#34;&gt;
+&lt;img src=&#34;gu_9.png&#34;&gt;
+&lt;img src=&#34;gu_10.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;还可以提取重点信息：
+&lt;img src=&#34;gu_11.png&#34;&gt;
+&lt;img src=&#34;gu_12.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;下载下来的原始视频、音频、语音识别提取出的原始文字稿、抽出来的关键帧、生成的智能文章等，都在后端的运行时目录中特定的session目录下：
+&lt;img src=&#34;gu_13.png&#34;&gt;
+&lt;img src=&#34;gu_14.png&#34;&gt;
+&lt;img src=&#34;gu_15.png&#34;&gt;
+&lt;img src=&#34;gu_16.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;以上，就是整个&lt;code&gt;视频智能文稿生成器&lt;/code&gt;的主要功能展示。&lt;/p&gt;
+&lt;p&gt;本来打算 买个域名部署到云上给大家试用一下，但想一想要花我的token，还是算了。感兴趣的朋友，自己clone下来部署到本地玩一玩，或者基于这个原型添加更多的功能玩玩。&lt;/p&gt;
+&lt;h1 id=&#34;2开发过程&#34;&gt;2.开发过程&lt;/h1&gt;
+&lt;p&gt;&lt;strong&gt;本篇尽量减少大段的代码展示&lt;/strong&gt;，主要从&lt;code&gt;自然语言编程&lt;/code&gt;角度，把实践过程给大家分享一下，特别是&lt;strong&gt;中间踩过的坑，以及解决思路&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;本次开发，也严格按照&lt;code&gt;SDD方法论&lt;/code&gt;进行（重要的是学会思想，不清楚的朋友，可以参看这篇文章）。&lt;/p&gt;
+&lt;h2 id=&#34;21-需求澄清&#34;&gt;2.1 需求澄清&lt;/h2&gt;
+&lt;p&gt;这个&lt;code&gt;视频智能文稿生成器&lt;/code&gt;的需求萌芽很简单，我就想能不能把那些优秀的演讲、访谈、自述等视频（或者从国外搬运的）给一键转成图文内容（智能优化后的），然后拿到头条、小红书啥的平台&amp;quot;去灌水&amp;quot;，万一有篇爆了呢&amp;hellip;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>玩转Claude Code（四）：Slash Commands详解</title>
+      <link>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E5%9B%9BSlash-Commands%E8%AF%A6%E8%A7%A3/</link>
+      <pubDate>Sun, 29 Mar 2026 21:21:30 +1000</pubDate>
+      <guid>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E5%9B%9BSlash-Commands%E8%AF%A6%E8%A7%A3/</guid>
+      <description>&lt;p&gt;大家好，我是bytezhou，上一篇详细分析了&lt;code&gt;CLAUDE.md&lt;/code&gt;，今天，将介绍Claude Code的一个核心工具：&lt;code&gt;Slash Commands&lt;/code&gt;（斜杠指令），是我们日常使用CC提效的关键。&lt;/p&gt;
+&lt;p&gt;在使用CC时，我们经常会重复输入一些Prompt，例如：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&amp;ldquo;请全面分析一下&lt;code&gt;@/src/main/java/com/example/service/moduleA&lt;/code&gt;，包括该模块的核心逻辑、主要流程、上下文依赖、关键设计等，按照 &lt;code&gt;@~/.claude/template/analyse.md&lt;/code&gt;模板 生成分析报告&amp;rdquo;。&lt;/li&gt;
+&lt;li&gt;&amp;ldquo;请按照&lt;code&gt;CLAUDE.md&lt;/code&gt;中的代码规范，审查&lt;code&gt;@com/example/listener/&lt;/code&gt;中的Java代码，重点关注异常处理、事务处理、并发操作是否合规&amp;rdquo;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;每次手敲、或者粘贴复制这些Prompt，繁琐、且可能出错。&lt;code&gt;Slash Commands&lt;/code&gt;就是用来解决这个问题，把我们日常重复、高频、还有可能较复杂的工作流Prompt，浓缩、封装成一个&amp;quot;斜杠命令&amp;quot;，直接 一键调用，大大提升了工作效率。&lt;/p&gt;
+&lt;p&gt;我先介绍Claude Code的&lt;code&gt;内置命令&lt;/code&gt;，再详细讲解如何&lt;code&gt;自定义命令&lt;/code&gt;。&lt;/p&gt;
+&lt;h1 id=&#34;内置slash-commands&#34;&gt;内置&lt;code&gt;Slash Commands&lt;/code&gt;&lt;/h1&gt;
+&lt;p&gt;CC内置了几十个&lt;code&gt;Slash Commands&lt;/code&gt;，我们只用掌握日常使用中最高频的命令，就能极大提效。&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;命令&lt;/th&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;功能&lt;/th&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;场景&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;/clear&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;&lt;strong&gt;清空当前会话的上下文&lt;/strong&gt;。这是每个用户需要掌握的最基础、最重要的命令&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;长会话中有大量对话历史，干扰AI的&amp;quot;注意力&amp;quot;且消耗token，/clear一键清空所有上下文历史。完成一个新功能开发、或者要开始修复一个bug等，赶紧使用/clear&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;/compact&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;智能&amp;quot;压缩&amp;quot;当前会话的上下文，仅保留核心摘要&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;先和AI进行了多轮对话 讨论清楚了某个功能设计，要开始实现了，此时可以执行/compact，保留设计的关键信息，减轻上下文压力&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;/rewind&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;&amp;ldquo;回滚&amp;rdquo;，包括对话和代码的回滚，后面会单独用一篇详细介绍&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;在SDD的任一步骤，都可以使用/rewind回滚对话或代码，直到你满意为止&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;/config&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;对话中打开一个交互式的配置界面，进行各种环境配置&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;改模型、改主题、改输出风格等，直接/config进行配置&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;/model&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;动态切换底层模型&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;简单任务用普通模型（便宜），复杂任务用/model动态切换到高级模型（贵）&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;/init&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;详解&lt;code&gt;CLAUDE.md&lt;/code&gt;时已经介绍了，用于初始化&lt;code&gt;CLAUDE.md&lt;/code&gt;&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;新项目、或老项目引用AI Coding时，初始化一份项目规范&lt;code&gt;CLAUDE.md&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;/memory&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;详解&lt;code&gt;CLAUDE.md&lt;/code&gt;时也介绍了，用来随时编辑调整&lt;code&gt;CLAUDE.md&lt;/code&gt;&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;随时查看CC现在加载的&lt;code&gt;CLAUDE.md&lt;/code&gt;，或者即时编辑、即时生效&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;/permissions&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;交互式界面，管理CC的权限规则&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;出于安全考虑（误改系统文件、&amp;ldquo;不小心&amp;quot;读到环境变量的系统密码等），想对CC的行为更精细化的&amp;quot;管控&amp;rdquo;，可以添加&lt;code&gt;允许&lt;/code&gt;、&lt;code&gt;禁止&lt;/code&gt;、&lt;code&gt;询问&lt;/code&gt;的操作规则（属于进阶用法了）&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;/review&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;内置的审查代码命令（基于PR）&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;要审查代码时，主动调用/review，CC会触发一个更专业细致的review流程（可能会调用专注审查的Sub-Agent，后面详细介绍）&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;/status&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;显示当前CC的整体状况，包括版本、模型等&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;偶尔看看CC的当前状态，看看配置对不对&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;/cost&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;显示当前会话的token消耗&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;统计&amp;quot;当前任务的整体开销&amp;quot;，评估并优化自己的Prompt方式（与钱相关）&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;/context&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;详细显示当前上下文窗口的具体组成，加载的系统Prompt、CLAUDE.md、MCP、Skills、Agent等各自占用了多少token&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;当你发现CC开始&amp;quot;胡言乱语&amp;quot;、老是&amp;quot;失忆&amp;quot;、或者&amp;quot;注意力&amp;quot;不集中，/context看一下，到底是&amp;quot;谁&amp;quot;占用了宝贵的上下文窗口&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;/help&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;CC的帮助入口，显示所有可用的&lt;code&gt;Slash Commands&lt;/code&gt;和&lt;code&gt;Skills&lt;/code&gt;，包括自定义的&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;你忘了某个命令或skill时，可以用/help查看一下&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h1 id=&#34;自定义slash-commands&#34;&gt;自定义&lt;code&gt;Slash Commands&lt;/code&gt;&lt;/h1&gt;
+&lt;p&gt;自定义&lt;code&gt;Slash Commands&lt;/code&gt;，是Claude Code提供的第一个强大扩展能力，也是我们开发者转向&amp;quot;工作流编排&amp;quot;的第一步。
+本篇开头举的两个例子，都是日常开发中高频、模板化的流程。把这些模板化的工作流程Prompt，固化成一个可以一键调用的&amp;quot;斜杠命令&amp;quot;，就是&lt;strong&gt;自定义&lt;code&gt;Slash Commands&lt;/code&gt;&lt;/strong&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;项目级和个人级slash-commands&#34;&gt;项目级和个人级&lt;code&gt;Slash Commands&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;和&lt;code&gt;CLAUDE.md&lt;/code&gt;的分层加载类似，自定义命令也有两层作用域：项目级、个人级。&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>玩转Claude Code（三）：记忆系统&#34;CLAUDE.md&#34;详解</title>
+      <link>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%89%E8%AE%B0%E5%BF%86%E7%B3%BB%E7%BB%9FCLAUDE.md%E8%AF%A6%E8%A7%A3/</link>
+      <pubDate>Fri, 27 Mar 2026 12:35:33 +0900</pubDate>
+      <guid>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%89%E8%AE%B0%E5%BF%86%E7%B3%BB%E7%BB%9FCLAUDE.md%E8%AF%A6%E8%A7%A3/</guid>
+      <description>&lt;p&gt;大家好，我是bytezhou，上一篇详细介绍了&lt;code&gt;@&lt;/code&gt;和&lt;code&gt;!&lt;/code&gt;指令，本篇将深入分析Claude Code实践中的一个关键要素，Claude Code的&amp;quot;Memory系统&amp;quot; - &lt;code&gt;CLAUDE.md&lt;/code&gt;。&lt;/p&gt;
+&lt;h1 id=&#34;claudemd-是啥&#34;&gt;CLAUDE.md 是啥？&lt;/h1&gt;
+&lt;p&gt;简单来说，&lt;code&gt;CLAUDE.md&lt;/code&gt;是CC持久化的&amp;quot;记忆&amp;quot;。&lt;code&gt;CLAUDE.md&lt;/code&gt;作为&amp;quot;背景知识库&amp;quot;，CC在启动时会自动加载它，其中的内容 会被自动注入到当前会话上下文中，无需你手动引入。&lt;/p&gt;
+&lt;p&gt;可以和&lt;code&gt;@&lt;/code&gt;指令对比理解一下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;@Server.java&lt;/code&gt;：就像你让某个同事看一下 Server.java 文件，然后你们的讨论聚焦在这个文件上，要优化或修bug啥的，确认清楚后就完事了。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;CLAUDE.md&lt;/code&gt;：像是你们团队的《研发规范》，来了新人，先让他了解《研发规范》，try catch不能吞异常、新功能要写单测等，在日常工作中不必时刻提醒他，他也知道该遵守什么、该禁止什么。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;总的来说，把用户反复输入的&amp;quot;Prompt&amp;quot;，固化为CC应该自动遵守的&amp;quot;静态内容&amp;quot;（项目的规范、公约），这就是 &lt;strong&gt;CLAUDE.md&lt;/strong&gt;，也是人机协作的&amp;quot;工程化&amp;quot;。&lt;/p&gt;
+&lt;h2 id=&#34;扩展内容agentsmd&#34;&gt;扩展内容：AGENTS.md&lt;/h2&gt;
+&lt;p&gt;AI生态百花齐放，Claude Code有&lt;code&gt;CLAUDE.md&lt;/code&gt;，Gemini有&lt;code&gt;GEMINI.md&lt;/code&gt;，Cursor有&lt;code&gt;Rules&lt;/code&gt;&amp;hellip;&amp;hellip;不同Agent，都有一套自己的&amp;quot;Memory系统&amp;quot;，用户将面临Agent&amp;quot;战国时代&amp;quot;。值此背景下，社区和AI巨头联合推出了一个&amp;quot;行业标准&amp;quot;-&lt;strong&gt;AGENTS.md&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;AGENTS.md&lt;/code&gt;作为&amp;quot;行业公约&amp;quot;，不和某个具体的AI Agent绑定，下面是官网的原文：&lt;strong&gt;&amp;ldquo;Think of AGENTS.md as a README for agents: a dedicated, predictable place to provide the context and instructions to help AI coding agents work on your project.&amp;rdquo;&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;关于AGENTS.md更多的详细内容，感兴趣的朋友请前往**&lt;a href=&#34;https://agents.md&#34;&gt;官网&lt;/a&gt;**了解。&lt;/p&gt;
+&lt;h1 id=&#34;深入分析-claudemd&#34;&gt;深入分析 CLAUDE.md&lt;/h1&gt;
+&lt;h2 id=&#34;分层加载&#34;&gt;分层加载&lt;/h2&gt;
+&lt;p&gt;CC在加载&lt;code&gt;CLAUDE.md&lt;/code&gt;时，会采用一种&amp;quot;分层加载&amp;quot;机制：项目层CLAUDE.md -&amp;gt; 用户层CLAUDE.md，加载顺序的优先级如下：
+&lt;img src=&#34;cc_3_1.png&#34;&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;项目层CLAUDE.md&lt;/strong&gt;：高优先级，一般位于当前项目根目录下，即&amp;quot;./CLAUDE.md&amp;quot;，或者&amp;quot;./.claude/CLAUDE.md&amp;quot;。它维护了团队公约和规范，是团队共享的&amp;quot;资产&amp;quot;。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;用户层CLAUDE.md&lt;/strong&gt;：低优先级，一般位于当前用户的个人主目录下，即&amp;quot;~/.claude/CLAUDE.md&amp;quot;，或&amp;quot;用户目录/.claude/CLAUDE.md&amp;quot;（windows用户）。它维护的是个人偏好，对当前用户下的所有项目均生效，若和项目层CLAUDE.md中出现相同的配置项冲突，则 项目层 会覆盖掉 用户层。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;除了上述总的&amp;quot;分层加载&amp;quot;机制，CC在查找&lt;code&gt;CLAUDE.md&lt;/code&gt;时，还有两个强大的机制：&lt;strong&gt;向上查找、向下发现&lt;/strong&gt;。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;向上查找&lt;/strong&gt;：启动CC时，它会从当前所在目录（pwd）一路&amp;quot;向上查找&amp;quot;，直到项目根目录（.git所在目录）、或者用户主目录（~/），沿途遇到的 &lt;code&gt;CLAUDE.md&lt;/code&gt; 都会自动加载。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;向下发现&lt;/strong&gt;：CC还能动态发现 当前目录下 子目录的&lt;code&gt;CLAUDE.md&lt;/code&gt;，但不会自动加载&amp;quot;子CLAUDE.md&amp;quot;，只有CC显示去读那个子目录中的文件时（通过&lt;code&gt;@文件&lt;/code&gt; 或者 调用Shell工具），才会动态加载&amp;quot;子CLAUDE.md&amp;quot;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这两个查找机制在&lt;code&gt;单一代码仓库&lt;/code&gt;结构的项目中极为有用，可以构建一种&amp;quot;级联CLAUDE.md&amp;quot;，我们来看个例子。下面是一个经典的&lt;code&gt;单一代码仓库&lt;/code&gt;项目：&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>玩转Claude Code（二）：基本交互范式&#34;@&#34;和&#34;!&#34;</title>
+      <link>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%BA%8C%E5%9F%BA%E6%9C%AC%E4%BA%A4%E4%BA%92%E8%8C%83%E5%BC%8F@%E5%92%8C/</link>
+      <pubDate>Wed, 25 Mar 2026 12:58:45 +0800</pubDate>
+      <guid>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%BA%8C%E5%9F%BA%E6%9C%AC%E4%BA%A4%E4%BA%92%E8%8C%83%E5%BC%8F@%E5%92%8C/</guid>
+      <description>&lt;p&gt;这一篇，我们正式进入 Claude Code**（后文简称CC）**的世界。&lt;/p&gt;
+&lt;p&gt;CC提供了一套简洁强大的交互模型，它的核心交互范式就浓缩在两个异常简单的符号里：&lt;code&gt;@&lt;/code&gt;和&lt;code&gt;!&lt;/code&gt;。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;@&lt;/code&gt;：CC&amp;quot;感知&amp;quot;世界的感官，用来获取外部世界的信息。对用户来说，使用&lt;code&gt;@&lt;/code&gt;给CC提供上下文信息，把以前的”粘贴复制“操作浓缩成一个&lt;code&gt;@&lt;/code&gt;符号。例如，输入&lt;code&gt;@Test.java&lt;/code&gt;，意味着告诉CC，&amp;ldquo;你先把Test.java文件看一遍，我们后面的讨论，都得基于你了解Test.java&amp;rdquo;。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;!&lt;/code&gt;：CC”改变“世界的&amp;quot;手&amp;quot;，用来&amp;quot;执行操作&amp;quot;，影响外部世界。这里所说的CC&amp;quot;执行操作&amp;quot;，大多是指执行Shell命令。通过&lt;code&gt;!&lt;/code&gt;符号，把执行命令的操作无缝融入对话过程中，减少了用户的割裂感。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;下面，让我们深入这两个指令。&lt;/p&gt;
+&lt;h1 id=&#34;claude-code的眼睛&#34;&gt;&lt;code&gt;@&lt;/code&gt;：Claude Code的&amp;quot;眼睛&amp;quot;&lt;/h1&gt;
+&lt;p&gt;在对话流中，&lt;code&gt;@&lt;/code&gt;指令可以随时为CC提供上下文信息，让它能&amp;quot;看到”你项目的全局。&lt;/p&gt;
+&lt;h2 id=&#34;引用单个文件&#34;&gt;&lt;code&gt;@&lt;/code&gt;引用单个文件&lt;/h2&gt;
+&lt;p&gt;这是&lt;code&gt;@&lt;/code&gt;指令最常用的方式，可以引用任何文件，代码、配置、数据库sql、文档等等，用法如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;@/path/file
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;@&lt;/code&gt;文件时，CC支持Tab自动补全（就像补全bash命令一样），&lt;code&gt;@&lt;/code&gt;后输入前几个字符，再按下Tab就能自动补全了。下面，我们来看两个&lt;code&gt;@&lt;/code&gt;单文件的例子。&lt;/p&gt;
+&lt;h3 id=&#34;解释代码&#34;&gt;解释代码&lt;/h3&gt;
+&lt;p&gt;你拿到一个全新的代码文件，想迅速理解，可以直接&lt;code&gt;@代码文件&lt;/code&gt;喂给CC，让它给你逐行解释：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;@server/src/main/java/com/github/liyue2008/rpc/server/Server.java
+请详细解释一下代码
+&lt;/code&gt;&lt;/pre&gt;&lt;img src=&#34;cc_2_1.png&#34;/&gt;
+可以看到，CC会读取`Server.java`文件，输出一份&#34;逐行注释&#34;的代码解释，你不用手动复制粘贴代码了。
+&lt;h3 id=&#34;提取文件核心内容&#34;&gt;提取文件核心内容&lt;/h3&gt;
+&lt;p&gt;你拿到一篇复杂的英文论文，想让CC帮你分析并提取核心内容，把提取的内容输出到一个结构化的文件中：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;@raft.pdf    
+请分析并提取该文件的核心内容，用中文组织输出，输出篇幅控制在2篇以内，生成一个`result.md`文件并写入当前目录
+&lt;/code&gt;&lt;/pre&gt;&lt;img src=&#34;cc_2_2.png&#34;/&gt;
+可以看到，CC会读取`raft.pdf`文件内容，分析后按要求用中文输出提取的核心内容，并尝试生成`result.md`结果文件，在获得我们的授权后，将结果文件写入当前目录下：
+&lt;img src=&#34;cc_2_3.png&#34;/&gt;
+&lt;h2 id=&#34;引用整个目录&#34;&gt;&lt;code&gt;@&lt;/code&gt;引用整个目录&lt;/h2&gt;
+&lt;p&gt;当需要宏观视角时（横跨多个文件），此时，&lt;code&gt;@&lt;/code&gt;可以引用整个目录：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;@/path/directory
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;CC在用&lt;code&gt;@&lt;/code&gt;读取目录时，默认&lt;strong&gt;能感知Git&lt;/strong&gt;，它会先找到根目录下&lt;code&gt;.gitignore&lt;/code&gt;文件，然后把&lt;code&gt;.gitignore&lt;/code&gt;中指定的目录和文件全部忽略掉，不会去加载。这样既减少了token浪费，又避免了无关文件的干扰。我们同样来看一个&lt;code&gt;@&lt;/code&gt;目录的例子。&lt;/p&gt;
+&lt;h3 id=&#34;分析新项目&#34;&gt;分析新项目&lt;/h3&gt;
+&lt;p&gt;你刚拿到一个全新的项目，对它一无所知，想快速上手，可以直接把整个项目目录喂给CC（不超过上下文最大窗口的前提下），让CC帮你分析新项目的整体架构、主要功能、核心流程等：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;@./
+请分析当前项目的整体结构、主要功能、核心流程和相关依赖
+&lt;/code&gt;&lt;/pre&gt;&lt;img src=&#34;cc_2_4.png&#34;/&gt;
+&lt;img src=&#34;cc_2_5.png&#34;/&gt;
+&lt;img src=&#34;cc_2_6.png&#34;/&gt;
+&lt;img src=&#34;cc_2_7.png&#34;/&gt;
+&lt;img src=&#34;cc_2_8.png&#34;/&gt;
+可以看到，CC扫描了整个项目，把相关Java代码都读了一遍，整体分析理解后，输出了详细的项目结构、核心流程、主要依赖等，堪比资深的研发同事为你做项目简介。
+&lt;p&gt;&lt;code&gt;@&lt;/code&gt;作为CC的&amp;quot;眼睛&amp;quot;，将真实世界的信息转化为CC能够理解的上下文。掌握&lt;code&gt;@&lt;/code&gt;，是掌握Claude Code的第一步。&lt;/p&gt;
+&lt;h1 id=&#34;claude-code的手&#34;&gt;&lt;code&gt;!&lt;/code&gt;：Claude Code的&amp;quot;手&amp;quot;&lt;/h1&gt;
+&lt;p&gt;在对话流中，&lt;code&gt;!&lt;/code&gt;指令可以随时执行Shell命令（无需退出CC），打通&amp;quot;想&amp;quot;（云端大模型）和&amp;quot;做&amp;quot;（本地环境）之间的壁垒。&lt;/p&gt;
+&lt;h2 id=&#34;手动执行命令&#34;&gt;手动执行命令&lt;/h2&gt;
+&lt;p&gt;这是&lt;code&gt;!&lt;/code&gt;直接的用法，在对话中手动执行Shell命令，用法如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;! {shell_command}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们来看一个例子。&lt;/p&gt;
+&lt;h3 id=&#34;查看当前目录所有文件&#34;&gt;查看当前目录所有文件&lt;/h3&gt;
+&lt;p&gt;你想看一下项目的当前目录中有哪些文件，直接执行：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;! ls -alh
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;终端会执行这个Shell命令，把结果返给CC：
+&lt;img src=&#34;cc_2_9.png&#34;/&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;!&lt;/code&gt;命令的输出，会自动加入当前对话的上下文中，被CC所感知&lt;/strong&gt;。这个特性很强大，后续对话可以基于&lt;code&gt;!&lt;/code&gt;命令的输出，做进一步的操作。&lt;/p&gt;
+&lt;p&gt;上面的例子中，列出了当前目录下的所有文件，现在我们在&lt;code&gt;README.md&lt;/code&gt;文件后加一句话：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;在`README.md`文件后追加一句话: &amp;#34;测试!命令的输出能被感知到&amp;#34;。
+&lt;/code&gt;&lt;/pre&gt;&lt;img src=&#34;cc_2_10.png&#34;/&gt;
+CC直接在`README.md`末尾加上了这句话。
+&lt;h2 id=&#34;claude-code自主执行命令&#34;&gt;Claude Code自主执行命令&lt;/h2&gt;
+&lt;p&gt;让CC自主决定执行什么命令（what）、什么时候执行（when），这才是&lt;code&gt;!&lt;/code&gt;的AI原生用法。当CC判断需要执行Shell命令来完成任务，&lt;strong&gt;它会主动发起Tool Call（工具调用）&lt;/strong&gt;，先找你审批，等你审批通过后，它才执行。&lt;/p&gt;
+&lt;p&gt;我们来看一个例子，我想知道当前连的局域网的公网ip是多少，可以直接问CC：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;请帮我查一下，当前局域网暴露的公网ip是多少？
+&lt;/code&gt;&lt;/pre&gt;&lt;img src=&#34;cc_2_11.png&#34;/&gt;
+CC思考之后，想发起一个Bash调用（执行curl命令）查询公网ip，它先来找你审批，你同意后，它才执行Bash调用：
+&lt;img src=&#34;cc_2_12.png&#34;/&gt;
+最后查到公网ip，结束本次任务。
+&lt;p&gt;以上，就是Claude Code的核心交互范式，掌握了&lt;code&gt;@&lt;/code&gt;和&lt;code&gt;!&lt;/code&gt;，你就拥有了与Claude Code协作的基础能力。
+用户发出指令 -&amp;gt; CC用&lt;code&gt;@&lt;/code&gt;看 -&amp;gt; 云端大模型思考 -&amp;gt; CC用&lt;code&gt;!&lt;/code&gt;做 -&amp;gt; 执行结果反馈给用户，这个反馈循环，就是我们与Claude Code的协作日常。&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>玩转Claude Code（一）：基本介绍与环境搭建</title>
+      <link>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%80%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D%E4%B8%8E%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/</link>
+      <pubDate>Mon, 23 Mar 2026 23:49:40 +0800</pubDate>
+      <guid>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%80%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D%E4%B8%8E%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/</guid>
+      <description>&lt;p&gt;&lt;strong&gt;跟着我一起玩转Claude Code！&lt;/strong&gt;&lt;/p&gt;
+&lt;h1 id=&#34;1基本介绍&#34;&gt;1、基本介绍&lt;/h1&gt;
+&lt;p&gt;Claude Code是Anthropic公司推出的CLI AI Agent（命令行AI智能体），最初锚向的是AI Coding工具，但发展到现在，我对它的理解，已经不仅仅只是一个&amp;quot;编程Agent&amp;quot;了。&lt;/p&gt;
+&lt;p&gt;纵观市面上主流的 AI Coding 工具，GitHub Copilot、Windsurf、Cursor等，百花齐放。&amp;ldquo;御三家&amp;rdquo; Codex（OpenAI的）、Gemini（Google的）、Claude Code（Anthropic的）均有各自的特点和擅长的赛道，但个人体验后，&lt;strong&gt;我愿称Claude Code为&amp;quot;最强&amp;quot;&lt;/strong&gt;（纯个人观点，非引战）。&lt;/p&gt;
+&lt;p&gt;Claude Code的核心设计理念就是一个**&amp;ldquo;自主自治的工作流引擎&amp;rdquo;**，它能从整体上理解项目全局上下文，自主规划并执行复杂的端到端任务，拥有Hooks、Commands、Skills、MCP等丰富的自定义扩展能力，是团队中不可或缺的&amp;quot;自己搬砖的虚拟成员&amp;quot;。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;缔造了&amp;quot;事实标准&amp;quot;&lt;/strong&gt;：Claude Code可以说是CLI AI Agent领域的开创者，许多&amp;quot;游戏规则&amp;quot;都是它定的，比如 &amp;ldquo;@&amp;ldquo;注入上下文、&amp;rdquo;!&amp;ldquo;执行shell命令、&amp;rdquo;/&amp;ldquo;发起斜杠命令等，后续的工具大多都借鉴效仿了其设计。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;实现了完整方法论&lt;/strong&gt;：Claude Code将SDD方法论实现得最完整、最体系化，包括上下文管理、安全限制、MCP扩展等。掌握了它，也就掌握了底层的使用思想，可以无缝切换到其他工具。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;拥有最繁荣的生态&lt;/strong&gt;：Claude Code凭借其强大的先发优势形成了正向的生态循环，吸引大量用户使用，催生出更多第三方工具和更多模型的支持，国内的主流模型都提供了对Claude Code的支持，比如minimax、GLM、Kimi等。掌握了它，你就接入了一个不断发展的AI生态。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;AI时代，我认为每个开发者都要掌握Claude Code的使用。但相比开发者而言，&lt;strong&gt;我更推荐产品经理来学习Claude Code，一旦你掌控了它，就拥有了一支由&amp;quot;架构师&amp;rdquo;+&amp;ldquo;技术leader&amp;rdquo;+&amp;ldquo;资深研发者们&amp;quot;组成的专业&amp;quot;虚拟研发团队&amp;rdquo;，配合你强大的产品思维，完全可以&amp;quot;一人成军&amp;rdquo;，踏上OPC（一人公司）之路&lt;/strong&gt;。&lt;/p&gt;
+&lt;h1 id=&#34;2环境搭建&#34;&gt;2、环境搭建&lt;/h1&gt;
+&lt;p&gt;现在正式开始搭建环境，总体思路就是：&lt;strong&gt;Claude Code Agent + 国产大模型&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;Anthropic公司原生的大模型真的太贵了，另外，它也封禁了国内ip（通过香港的vpn跳过去好像也不行）。国内用户一般做法是，给Claude Code这辆&amp;quot;超跑&amp;quot;换一个&amp;quot;国产引擎&amp;quot;（国产大模型），它的&amp;quot;驾驶操作&amp;quot;是一样的，无非就是&amp;quot;驾驶体验&amp;quot;要稍差一点，一旦你学会了如何&amp;quot;驾驶&amp;quot;，可以无缝切回它的原生&amp;quot;引擎&amp;quot;。&lt;/p&gt;
+&lt;h2 id=&#34;21-安装claude-code&#34;&gt;2.1 安装Claude Code&lt;/h2&gt;
+&lt;p&gt;我的环境是macOS，以macOS为例来说明如何安装Claude Code。&lt;/p&gt;
+&lt;p&gt;我在macOS中采用Homebrew来安装Claude Code，先安装Homebrew，再用Homebrew来安装Claude Code。
+打开终端，先安装xcode：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;xcode-select --install
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;xcode安装后，用官方脚本安装Homebrew：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;/bin/bash -c &amp;#34;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Homebrew安装后，根据终端的提示，把Homebrew的环境变量写到用户的配置里，M芯片的Mac用户执行以下命令：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;echo &amp;#39;eval &amp;#34;$(/opt/homebrew/bin/brew shellenv)&amp;#34;&amp;#39; &amp;gt;&amp;gt; ~/.zshrc
+source ~/.zshrc
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Intel芯片的Mac用户则执行以下命令：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;echo &amp;#39;eval &amp;#34;$(/usr/local/bin/brew shellenv)&amp;#34;&amp;#39; &amp;gt;&amp;gt; ~/.bash_profile
+source ~/.bash_profile
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Homebrew安装好后，可以验证一下是否能用：&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>基于Claude Code的SDD实战（三）：任务拆解及自动实现</title>
+      <link>http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%B8%89%E4%BB%BB%E5%8A%A1%E6%8B%86%E8%A7%A3%E5%8F%8A%E8%87%AA%E5%8A%A8%E5%AE%9E%E7%8E%B0/</link>
+      <pubDate>Sat, 21 Mar 2026 19:13:42 +0800</pubDate>
+      <guid>http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%B8%89%E4%BB%BB%E5%8A%A1%E6%8B%86%E8%A7%A3%E5%8F%8A%E8%87%AA%E5%8A%A8%E5%AE%9E%E7%8E%B0/</guid>
+      <description>&lt;p&gt;大家好，我是bytezhou，上一篇进行了SDD第二步-技术规划，今天将进入本次SDD实战的收尾-任务拆解及自动实现。&lt;/p&gt;
+&lt;h1 id=&#34;1任务拆解&#34;&gt;1、任务拆解&lt;/h1&gt;
+&lt;p&gt;AI技术规划后输出 plan.md，距离代码，中间还缺少一步：把宏观的plan.md，拆分成一系列带依赖关系的、原子化的具体开发任务 tasks.md。技术细节已经齐全，但这个阶段要注意拆分的任务粒度和执行顺序。输入以下Prompt：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;@specs/spec.md
+@plan.md
+
+你现在是技术leader，请根据`spec.md`和`plan.md`，**将`plan.md`中的技术方案，拆分成原子化的、详细的、带依赖关系的、可被直接执行的任务列表。**
+
+核心要求：
+1. 任务粒度：每个任务只实现最小化的功能（只涉及一个文件的变更）。**务必禁止：&amp;#34;实现所有功能&amp;#34;的大任务。**
+2. TDD：必须遵守&amp;#34;测试先行&amp;#34;，先生成测试、再去实现。
+3. 并行标记：对没有依赖关系的任务，标记【P】。
+4. 执行顺序（以下面的为准）：
+  **1: 数据结构定义**
+  **2: Github数据获取（请遵循TDD）**
+  **3: 生成Markdown文件（请遵循TDD）**
+  **4: 程序入口集成（请遵循TDD）**
+  
+完成后，将生成的任务列表写入到项目根目录下的tasks.md文件中。
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;下面是AI拆分任务的过程：&lt;/p&gt;
+&lt;p&gt;&lt;img alt=&#34;sdd_4_1&#34; loading=&#34;lazy&#34; src=&#34;http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%B8%89%E4%BB%BB%E5%8A%A1%E6%8B%86%E8%A7%A3%E5%8F%8A%E8%87%AA%E5%8A%A8%E5%AE%9E%E7%8E%B0/sdd_4_1.jpg&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img alt=&#34;sdd_4_2&#34; loading=&#34;lazy&#34; src=&#34;http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%B8%89%E4%BB%BB%E5%8A%A1%E6%8B%86%E8%A7%A3%E5%8F%8A%E8%87%AA%E5%8A%A8%E5%AE%9E%E7%8E%B0/sdd_4_2.jpg&#34;&gt;&lt;/p&gt;
+&lt;p&gt;最终，AI会生成一份详尽的任务列表 tasks.md，我把它贴出来：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;# down_issue 任务列表
+ 
+## 执行顺序
+1. 数据结构定义 (types.go)
+2. GitHub 数据获取 (parser + github)
+3. 生成 Markdown (markdown)
+4. 程序入口集成 (cmd)
+ 
+---
+ 
+## 阶段一：数据结构定义
+ 
+### 1.1 【P】创建 github/types.go - 定义数据结构
+ 
+**文件**: `internal/github/types.go`
+ 
+**内容**: 定义 Issue、PullRequest、Discussion、Comment 结构体，以及 ItemType 枚举和 Content 接口
+ 
+**依赖**: 无
+ 
+**任务**: 实现以下数据结构和接口
+ 
+```go
+// ItemType 表示 GitHub 内容的类型
+type ItemType int
+ 
+const (
+    TypeIssue ItemType = iota
+    TypePullRequest
+    TypeDiscussion
+)
+ 
+// Issue 表示 GitHub Issue
+type Issue struct {
+    Number    int
+    Title     string
+    Body      string
+    Author    string
+    CreatedAt time.Time
+    URL       string
+    Comments  []Comment
+}
+ 
+// PullRequest 表示 GitHub Pull Request
+type PullRequest struct {
+    Number    int
+    Title     string
+    Body      string
+    Author    string
+    CreatedAt time.Time
+    URL       string
+    Comments  []Comment
+}
+ 
+// Discussion 表示 GitHub Discussion
+type Discussion struct {
+    Number    int
+    Title     string
+    Body      string
+    Author    string
+    CreatedAt time.Time
+    URL       string
+    Comments  []Comment
+}
+ 
+// Comment 表示评论/回复
+type Comment struct {
+    Body      string
+    Author    string
+    CreatedAt time.Time
+}
+ 
+// Content 统一的内容接口
+type Content interface {
+    GetTitle() string
+    GetBody() string
+    GetAuthor() string
+    GetCreatedAt() time.Time
+    GetURL() string
+    GetComments() []Comment
+}
+```
+ 
+---
+ 
+## 阶段二：GitHub 数据获取
+ 
+### 2.1 【P】创建 parser/parser_test.go - URL 解析测试
+ 
+**文件**: `internal/parser/parser_test.go`
+ 
+**依赖**: 无
+ 
+**任务**: 编写表格驱动测试，覆盖以下用例：
+- 有效的 Issue URL (`https://github.com/owner/repo/issues/123`)
+- 有效的 PR URL (`https://github.com/owner/repo/pull/123`)
+- 有效的 Discussion URL (`https://github.com/owner/repo/discussions/123`)
+- 无效 URL 格式
+- 缺失关键部分
+ 
+### 2.2 【P】创建 parser/parser.go - URL 解析实现
+ 
+**文件**: `internal/parser/parser.go`
+ 
+**依赖**: 无
+ 
+**任务**: 实现 `Parse(url string) (*ParseResult, error)` 函数
+- 解析 GitHub URL，识别类型（issue/pull/discussions）
+- 提取 owner、repo、number
+- 返回 ParseResult 或错误
+ 
+### 2.3 【P】创建 github/github_test.go - GitHub API 测试
+ 
+**文件**: `internal/github/github_test.go`
+ 
+**依赖**: types.go
+ 
+**任务**: 编写表格驱动测试，使用 HTTP test server mock GitHub API
+- 测试 FetchIssue
+- 测试 FetchPullRequest
+- 测试 FetchDiscussion
+- 测试 404 错误处理
+- 测试网络错误处理
+ 
+### 2.4 【P】创建 github/github.go - GitHub API 客户端
+ 
+**文件**: `internal/github/github.go`
+ 
+**依赖**: types.go
+ 
+**任务**: 实现 `Client` 接口和 `NewClient(token string) Client`
+- FetchIssue(owner, repo string, number int) (*Issue, error)
+- FetchPullRequest(owner, repo string, number int) (*PullRequest, error)
+- FetchDiscussion(owner, repo string, number int) (*Discussion, error)
+- 使用 net/http 调用 GitHub REST API
+- 支持 GITHUB_TOKEN 认证
+ 
+### 2.5 【P】创建 parser/parser.go 的 GetFilename 函数测试
+ 
+**文件**: `internal/parser/parser_test.go` (追加)
+ 
+**依赖**: parser.go
+ 
+**任务**: 追加测试用例测试 GetFilename 函数
+- Issue: `{owner}_{repo}_issue_{number}.md`
+- PR: `{owner}_{repo}_pr_{number}.md`
+- Discussion: `{owner}_{repo}_discussion_{number}.md`
+ 
+### 2.6 【P】创建 parser/parser.go 的 GetFilename 函数实现
+ 
+**文件**: `internal/parser/parser.go` (追加)
+ 
+**依赖**: parser.go
+ 
+**任务**: 实现 `GetFilename(itemType ItemType, owner, repo string, number int) string`
+ 
+### 2.7 创建 fetcher/fetcher_test.go - fetcher 测试
+ 
+**文件**: `internal/fetcher/fetcher_test.go`
+ 
+**依赖**: parser, github
+ 
+**任务**: 编写表格驱动测试
+- 测试 Fetch 成功获取 Issue
+- 测试 Fetch 成功获取 PR
+- 测试 Fetch 成功获取 Discussion
+- 测试无效 URL 错误
+ 
+### 2.8 创建 fetcher/fetcher.go - 数据获取实现
+ 
+**文件**: `internal/fetcher/fetcher.go`
+ 
+**依赖**: parser, github
+ 
+**任务**: 实现 `Fetch(url string, client github.Client) (Content, error)`
+- 组合 parser.Parse 和 github.Client.Fetch*
+- 返回统一的 Content 接口
+ 
+---
+ 
+## 阶段三：生成 Markdown
+ 
+### 3.1 创建 markdown/markdown_test.go - Markdown 生成测试
+ 
+**文件**: `internal/markdown/markdown_test.go`
+ 
+**依赖**: github/types.go
+ 
+**任务**: 编写表格驱动测试
+- 测试 GenerateIssue 生成正确格式
+- 测试 GeneratePullRequest 生成正确格式
+- 测试 GenerateDiscussion 生成正确格式
+- 测试 GetFilename 返回正确文件名
+ 
+### 3.2 创建 markdown/markdown.go - Markdown 生成实现
+ 
+**文件**: `internal/markdown/markdown.go`
+ 
+**依赖**: github/types.go
+ 
+**任务**: 实现以下函数
+- `Generate(content github.Content) string`
+- `GenerateIssue(issue *github.Issue) string`
+- `GeneratePullRequest(pr *github.PullRequest) string`
+- `GenerateDiscussion(discussion *github.Discussion) string`
+- `GetFilename(itemType parser.ItemType, owner, repo string, number int) string`
+ 
+---
+ 
+## 阶段四：程序入口集成
+ 
+### 4.1 创建 cmd/down_issue/main.go - CLI 入口
+ 
+**文件**: `cmd/down_issue/main.go`
+ 
+**依赖**: parser, github, fetcher, markdown
+ 
+**任务**: 实现 CLI 入口
+- 解析命令行参数 (flag)
+- 处理 -o/--output 输出目录参数
+- 调用 fetcher.Fetch 获取内容
+- 调用 markdown.Generate 生成文件
+- 错误处理和退出码
+ 
+### 4.2 创建 Makefile - 构建脚本
+ 
+**文件**: `Makefile`
+ 
+**依赖**: 无
+ 
+**任务**: 定义以下目标
+- `go build` - 构建项目
+- `go test` - 运行所有测试
+- `go vet` - 代码检查
+- `clean` - 清理构建产物
+ 
+### 4.3 创建 go.mod - 模块定义
+ 
+**文件**: `go.mod`
+ 
+**依赖**: 无
+ 
+**任务**: 定义模块名 `github.com/user/down_issue`，Go 版本 &amp;gt;= 1.26
+ 
+---
+ 
+## 任务状态汇总
+ 
+| 序号 | 任务 | 文件 | 依赖 | 状态 |
+|------|------|------|------|------|
+| 1.1 | 创建 github/types.go | internal/github/types.go | 无 | ⬜ |
+| 2.1 | 创建 parser/parser_test.go | internal/parser/parser_test.go | 无 | ⬜ |
+| 2.2 | 创建 parser/parser.go | internal/parser/parser.go | 无 | ⬜ |
+| 2.3 | 创建 github/github_test.go | internal/github/github_test.go | types.go | ⬜ |
+| 2.4 | 创建 github/github.go | internal/github/github.go | types.go | ⬜ |
+| 2.5 | 追加 parser GetFilename 测试 | internal/parser/parser_test.go | parser.go | ⬜ |
+| 2.6 | 实现 parser GetFilename | internal/parser/parser.go | parser.go | ⬜ |
+| 2.7 | 创建 fetcher/fetcher_test.go | internal/fetcher/fetcher_test.go | parser, github | ⬜ |
+| 2.8 | 创建 fetcher/fetcher.go | internal/fetcher/fetcher.go | parser, github | ⬜ |
+| 3.1 | 创建 markdown/markdown_test.go | internal/markdown/markdown_test.go | github/types | ⬜ |
+| 3.2 | 创建 markdown/markdown.go | internal/markdown/markdown.go | github/types | ⬜ |
+| 4.1 | 创建 cmd/down_issue/main.go | cmd/down_issue/main.go | 所有模块 | ⬜ |
+| 4.2 | 创建 Makefile | Makefile | 无 | ⬜ |
+| 4.3 | 创建 go.mod | go.mod | 无 | ⬜ |
+ 
+---
+ 
+## 并行执行分组
+ 
+**【P】第一组（无依赖，可并行）**:
+- 1.1, 2.1, 2.2, 2.3, 2.4
+ 
+**【P】第二组（依赖第一组，可并行）**:
+- 2.5, 2.6, 2.7, 3.1
+ 
+**第三组（依赖第二组，顺序执行）**:
+- 2.8, 3.2, 4.1, 4.2, 4.3
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;【再次提醒：一定要审查！】&lt;/strong&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>基于Claude Code的SDD实战（二）：技术规划</title>
+      <link>http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%BA%8C%E6%8A%80%E6%9C%AF%E8%A7%84%E5%88%92/</link>
+      <pubDate>Thu, 19 Mar 2026 22:28:42 +0800</pubDate>
+      <guid>http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%BA%8C%E6%8A%80%E6%9C%AF%E8%A7%84%E5%88%92/</guid>
+      <description>&lt;p&gt;大家好，我是bytezhou，上一篇给大家实践了SDD第一步-定义意图，接下来进入SDD第二步：技术规划。&lt;/p&gt;
+&lt;p&gt;传统范式下，产品经理输出PRD后，架构师拿着这份PRD进行技术选型（用Java还是Go）、架构设计（整体流程、分层设计）、模块划分（微服务拆分、数据建模）、API设计（前后端交互接口等）等，产出项目概要设计、详细设计文档等。&lt;/p&gt;
+&lt;p&gt;SDD范式下，&amp;ldquo;业务&amp;quot;映射在澄清后的、结构化的需求规范spec.md中，AI作为&amp;quot;架构师&amp;rdquo;，我们开发者则作为&amp;quot;工作流设计者&amp;quot;，指挥引导&amp;quot;AI架构师&amp;quot;把高层级的spec.md，&amp;ldquo;编译&amp;quot;成一份详尽的、结构化的技术规划方案 plan.md。废话不多说，我们进入正题。&lt;/p&gt;
+&lt;p&gt;切回项目目录，打开Claude Code（关闭plan mode），我们先来根据spec.md，指定技术栈，生成项目结构，同时让AI生成一份API声明（不一定严格遵守），作为后续输入（指导它思考）。输入以下Prompt：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-markdown&#34; data-lang=&#34;markdown&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;ni&#34;&gt;@specs/spec&lt;/span&gt;.md
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;你是一名资深的Go语言架构师，请严格参考Go语言最佳实践（特别注意包内聚原则），根据&lt;span class=&#34;sb&#34;&gt;`spec.md`&lt;/span&gt;，规划并创建整体的项目目录结构。
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;生成目录后，请在项目根目录下创建&lt;span class=&#34;sb&#34;&gt;`api.md`&lt;/span&gt;文件，描述一下各个包对外暴露的主要接口（Interface/Function签名），作为后续开发的指导。
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;AI会迅速执行以上操作，按照Go最佳实践来生成项目结构，下面是它的执行过程：&lt;/p&gt;
+&lt;p&gt;&lt;img alt=&#34;sdd_3_1&#34; loading=&#34;lazy&#34; src=&#34;http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%BA%8C%E6%8A%80%E6%9C%AF%E8%A7%84%E5%88%92/sdd_3_1.jpg&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img alt=&#34;sdd_3_2&#34; loading=&#34;lazy&#34; src=&#34;http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%BA%8C%E6%8A%80%E6%9C%AF%E8%A7%84%E5%88%92/sdd_3_2.jpg&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img alt=&#34;sdd_3_3&#34; loading=&#34;lazy&#34; src=&#34;http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%BA%8C%E6%8A%80%E6%9C%AF%E8%A7%84%E5%88%92/sdd_3_3.jpg&#34;&gt;&lt;/p&gt;
+&lt;p&gt;可以看到，AI不仅创建了项目目录、生成了api.md，还进行了go mod初始化和makefile的生成，一气呵成。&lt;/p&gt;
+&lt;p&gt;以下是生成的 &lt;strong&gt;api.md&lt;/strong&gt;：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;# API 文档
+ 
+本文档描述 `down_issue` 项目各包对外暴露的主要接口，作为后续开发的指导。
+ 
+---
+ 
+## 1. `internal/parser` - URL 解析
+ 
+### 职责
+解析 GitHub URL，提取 owner、repo、number 及类型信息。
+ 
+### 接口签名
+ 
+```go
+// ItemType 表示 GitHub 内容的类型
+type ItemType int
+ 
+const (
+    TypeIssue ItemType = iota
+    TypePullRequest
+    TypeDiscussion
+)
+ 
+// ParseResult 解析结果
+type ParseResult struct {
+    Type   ItemType // 类型：Issue、PR、Discussion
+    Owner  string   // 仓库所有者
+    Repo   string   // 仓库名
+    Number int      // 编号
+}
+ 
+// Parse(url string) (*ParseResult, error)
+// 解析 GitHub URL，返回解析结果
+// 支持格式：
+//   - https://github.com/{owner}/{repo}/issues/{number}
+//   - https://github.com/{owner}/{repo}/pull/{number}
+//   - https://github.com/{owner}/{repo}/discussions/{number}
+// 错误：URL 格式不正确时返回错误
+```
+ 
+---
+ 
+## 2. `internal/github` - GitHub API 客户端
+ 
+### 职责
+封装 GitHub REST API 调用，获取 Issue、PR、Discussion 及其评论。
+ 
+### 接口签名
+ 
+```go
+// Issue 表示 GitHub Issue 数据结构
+type Issue struct {
+    Number    int
+    Title     string
+    Body      string
+    Author    string
+    CreatedAt time.Time
+    URL       string
+    Comments  []Comment
+}
+ 
+// PullRequest 表示 GitHub Pull Request 数据结构
+type PullRequest struct {
+    Number    int
+    Title     string
+    Body      string
+    Author    string
+    CreatedAt time.Time
+    URL       string
+    Comments  []Comment
+}
+ 
+// Discussion 表示 GitHub Discussion 数据结构
+type Discussion struct {
+    Number     int
+    Title      string
+    Body       string
+    Author     string
+    CreatedAt  time.Time
+    URL        string
+    Comments   []Comment
+}
+ 
+// Comment 表示评论/回复
+type Comment struct {
+    Body      string
+    Author    string
+    CreatedAt time.Time
+}
+ 
+// Client GitHub API 客户端接口
+type Client interface {
+    // FetchIssue 获取 Issue 及其评论
+    FetchIssue(owner, repo string, number int) (*Issue, error)
+ 
+    // FetchPullRequest 获取 PR 及其评论
+    FetchPullRequest(owner, repo string, number int) (*PullRequest, error)
+ 
+    // FetchDiscussion 获取 Discussion 及其评论
+    FetchDiscussion(owner, repo string, number int) (*Discussion, error)
+}
+ 
+// NewClient(token string) Client
+// 创建 GitHub API 客户端
+// token: 可选的 GITHUB_TOKEN，用于私有仓库或提高 API 速率限制
+```
+ 
+---
+ 
+## 3. `internal/fetcher` - 数据获取逻辑
+ 
+### 职责
+组合 parser 和 github 包，提供高层的数据获取接口。
+ 
+### 接口签名
+ 
+```go
+// Content 统一的内容接口
+type Content interface {
+    GetTitle() string
+    GetBody() string
+    GetAuthor() string
+    GetCreatedAt() time.Time
+    GetURL() string
+    GetComments() []github.Comment
+}
+ 
+// Fetch(url string, client github.Client) (Content, error)
+// 根据 URL 自动识别类型，获取对应内容
+// 返回 Content 接口，支持 Issue、PR、Discussion 的统一处理
+```
+ 
+---
+ 
+## 4. `internal/markdown` - Markdown 生成
+ 
+### 职责
+将获取的内容转换为格式化的 Markdown 文件。
+ 
+### 接口签名
+ 
+```go
+// GenerateIssue(issue *github.Issue) string
+// 将 Issue 转换为 Markdown 格式字符串
+ 
+// GeneratePullRequest(pr *github.PullRequest) string
+// 将 PullRequest 转换为 Markdown 格式字符串
+ 
+// GenerateDiscussion(discussion *github.Discussion) string
+// 将 Discussion 转换为 Markdown 格式字符串
+ 
+// Generate(content github.Content) string
+// 统一生成接口，根据 content 类型自动选择对应生成函数
+```
+ 
+### 输出文件名格式
+ 
+```go
+// GetFilename(itemType parser.ItemType, owner, repo string, number int) string
+// 返回格式：
+//   - Issue:       {owner}_{repo}_issue_{number}.md
+//   - PullRequest: {owner}_{repo}_pr_{number}.md
+//   - Discussion:  {owner}_{repo}_discussion_{number}.md
+```
+ 
+---
+ 
+## 5. `cmd/down_issue` - CLI 入口
+ 
+### 职责
+命令行接口，协调各模块完成下载任务。
+ 
+### main.go 逻辑
+ 
+```go
+// 用法：
+//   down_issue &amp;lt;url&amp;gt;           # 下载到当前目录
+//   down_issue &amp;lt;url&amp;gt; -o &amp;lt;path&amp;gt; # 下载到指定目录
+ 
+// 主要流程：
+//   1. 解析命令行参数（url, -o output-dir）
+//   2. 调用 parser.Parse() 解析 URL
+//   3. 创建 github.Client（可选使用 GITHUB_TOKEN）
+//   4. 调用 fetcher.Fetch() 获取内容
+//   5. 调用 markdown.Generate() 生成 Markdown
+//   6. 调用 markdown.GetFilename() 获取文件名
+//   7. 写入文件到指定目录
+```
+ 
+---
+ 
+## 模块依赖关系
+ 
+```
+cmd/down_issue/main.go
+    │
+    ├── parser.Parse()
+    │       └── 返回 ItemType, Owner, Repo, Number
+    │
+    ├── github.NewClient(token)
+    │       └── 返回 github.Client 接口
+    │
+    ├── fetcher.Fetch(url, client)
+    │       ├── 调用 parser.Parse()
+    │       ├── 调用 github.Client.Fetch*()
+    │       └── 返回 Content 接口
+    │
+    └── markdown.Generate(content)
+            └── markdown.GetFilename()
+```
+ 
+---
+ 
+## 错误处理约定
+ 
+- 所有错误使用 `fmt.Errorf(&amp;#34;包名: 描述: %w&amp;#34;, err)` 包装
+- 网络错误、解析错误、API 错误直接透传
+- 不存在的资源返回标准 error，由 main.go 输出到 stderr 并以非零状态码退出
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这是一份非常详尽的api文档，包含了各模块的职责描述、核心数据结构定义、主要接口声明、模块间的依赖关系等，项目已经初具&amp;quot;骨架&amp;rdquo;。&lt;/p&gt;</description>
+    </item>
+    <item>
       <title>基于Claude Code的SDD实战（一）：定义意图</title>
       <link>http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%B8%80%E5%AE%9A%E4%B9%89%E6%84%8F%E5%9B%BE/</link>
       <pubDate>Thu, 19 Mar 2026 00:28:42 +0800</pubDate>
@@ -119,8 +976,8 @@
 &lt;/div&gt;&lt;p&gt;AI作为产品经理，会向你输出一系列高质量问题：
 &lt;img alt=&#34;sdd_2_1&#34; loading=&#34;lazy&#34; src=&#34;http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%B8%80%E5%AE%9A%E4%B9%89%E6%84%8F%E5%9B%BE/sdd_2_1.jpg&#34;&gt;
 &lt;img alt=&#34;sdd_2_2&#34; loading=&#34;lazy&#34; src=&#34;http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%B8%80%E5%AE%9A%E4%B9%89%E6%84%8F%E5%9B%BE/sdd_2_2.jpg&#34;&gt;&lt;/p&gt;
-&lt;p&gt;#第二轮对话：
-基于第一轮对话AI提出的问题，我做出了如下回复：&lt;/p&gt;
+&lt;h1 id=&#34;第二轮对话&#34;&gt;第二轮对话：&lt;/h1&gt;
+&lt;p&gt;基于第一轮对话AI提出的问题，我做出了如下回复：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
