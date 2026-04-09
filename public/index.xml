@@ -1,21 +1,85 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>ByteZhou的个人站点</title>
+    <title>ByteZhou的个人空间</title>
     <link>http://localhost:1313/</link>
-    <description>Recent content on ByteZhou的个人站点</description>
+    <description>Recent content on ByteZhou的个人空间</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 16 Mar 2026 00:48:04 +0800</lastBuildDate>
+    <lastBuildDate>Sat, 04 Apr 2026 21:59:42 +0800</lastBuildDate>
     <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>测试文章</title>
-      <link>http://localhost:1313/posts/%E6%B5%8B%E8%AF%95%E6%96%87%E7%AB%A0/</link>
-      <pubDate>Mon, 16 Mar 2026 00:48:04 +0800</pubDate>
-      <guid>http://localhost:1313/posts/%E6%B5%8B%E8%AF%95%E6%96%87%E7%AB%A0/</guid>
-      <description>&lt;h1 id=&#34;第一篇测试文章&#34;&gt;第一篇测试文章&lt;/h1&gt;
-&lt;h2 id=&#34;测试&#34;&gt;测试&lt;/h2&gt;
-&lt;p&gt;深夜里的第一次测试&lt;/p&gt;</description>
+      <title>AI浪潮下的职场重构：普通人如何在变局中找到位置</title>
+      <link>http://localhost:1313/posts/thought/ai-person-relation/</link>
+      <pubDate>Sat, 04 Apr 2026 21:59:42 +0800</pubDate>
+      <guid>http://localhost:1313/posts/thought/ai-person-relation/</guid>
+      <description>&lt;h2 id=&#34;引言当技术革命不再是均富机&#34;&gt;引言：当技术革命不再是均富机&lt;/h2&gt;
+&lt;p&gt;人工智能正在以前所未有的速度重塑职场生态。这次不一样——它不只是提升效率或创造新需求，而是在压缩存量工作的人力成本。一个设计小组从五人变成两人加一堆算力，被优化的不仅是岗位数量，更是整个中产阶层的生存逻辑。&lt;/p&gt;
+&lt;h2 id=&#34;一职场竞争逻辑的根本转变&#34;&gt;一、职场竞争逻辑的根本转变&lt;/h2&gt;
+&lt;h3 id=&#34;从专业能力到工具使用效率&#34;&gt;从专业能力到工具使用效率&lt;/h3&gt;
+&lt;p&gt;传统晋升路径建立在专业积累之上——十几年积累的经验、人脉，被视为不可替代的核心竞争力。但AI介入工作流程后，这种认知正在被颠覆。&lt;/p&gt;
+&lt;p&gt;核心问题是：你的经验、职级、行业积累，如果无法转化为高效的AI prompt，就可能变成&amp;quot;负资产&amp;quot;。因为你比年轻人贵，还比他们慢。&lt;/p&gt;
+&lt;p&gt;一个刚毕业两个月的本科生，可能因为熟练掌握AI工具，在三天内完成资深工程师两周才能完成的设计方案。这不是危言耸听，而是正在发生的事情。&lt;/p&gt;
+&lt;h3 id=&#34;中间层正在被精准打击&#34;&gt;中间层正在被&amp;quot;精准打击&amp;quot;&lt;/h3&gt;
+&lt;p&gt;传统公司架构是金字塔：顶层决策，中间层负责信息筛选、传递、美化和统筹协调，底层执行。AI在精准打击中间层。&lt;/p&gt;
+&lt;p&gt;AI可以迅速读完一百二十页报告并提取摘要，自动回复百分之八十以上的邮件，协调日程、生成报表、进行基础代码审查。以人力资源为例，以前需要五个人做的事情，现在一个人加一套系统就够了。&lt;/p&gt;
+&lt;p&gt;这意味着年薪50万~100万之间的中产岗位正在逐步消失。&lt;/p&gt;
+&lt;h2 id=&#34;二被结构击中的中产群体&#34;&gt;二、被&amp;quot;结构&amp;quot;击中的中产群体&lt;/h2&gt;
+&lt;h3 id=&#34;谁是中产不是有矿的人而是背着贷款的人&#34;&gt;谁是中产？不是有矿的人，而是背着贷款的人&lt;/h3&gt;
+&lt;p&gt;这里的&amp;quot;中产&amp;quot;不是有固定资产收租的得利者，而是指那些在大城市里背负两三百万房贷、开三十万的车、孩子上不错学校、每年必须旅游两次的群体。互联网大厂中层管理者、广告公司总监、金融公司项目经理——至少是公司小头目。&lt;/p&gt;
+&lt;p&gt;他们的共同特点是：高消费建立在对未来收入持续增长的乐观预期之上。&lt;/p&gt;
+&lt;p&gt;他们敢于消费，是因为相信自己即使今年被裁员，凭过往履历也能找到平级甚至更好的工作。但现在恐惧在于：市场根本没有平跳的机会了。&lt;/p&gt;
+&lt;h3 id=&#34;从不会变穷到变得无用&#34;&gt;从&amp;quot;不会变穷&amp;quot;到&amp;quot;变得无用&amp;quot;&lt;/h3&gt;
+&lt;p&gt;更准确地说，不是变穷了，而是&lt;strong&gt;变得没用了&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;他们手里还有积蓄、房产，但对未来的预期彻底改变了。一旦预期改变，消费行为立即转变：不再换车，不再换房，连楼下人均400的日料店也不去了。&lt;/p&gt;
+&lt;p&gt;过去十几年，消费引擎正靠这群人的负债型消费——把未来30年的收入在今天花掉。一旦这个群体对未来失去信心，开始缩表还债、主动减少支出，整个市场就很难拉动。&lt;/p&gt;
+&lt;h2 id=&#34;三ai与资本的双向奔赴&#34;&gt;三、AI与资本的双向奔赴&lt;/h2&gt;
+&lt;h3 id=&#34;企业的两难选择&#34;&gt;企业的两难选择&lt;/h3&gt;
+&lt;p&gt;很多人认为贸易战是外部压力、AI是内部技术变革，是两码事。但从现实看，他们是同一件事。&lt;/p&gt;
+&lt;p&gt;外部环境恶化正在逼迫企业与资本以近乎疯狂的速度拥抱AI。原因很简单：成本。&lt;/p&gt;
+&lt;p&gt;过去十几年，制造业、外贸企业甚至科技公司赚的是全球化红利——人口红利、供应链优势，技术不算最顶尖，但胜在性价比高。现在关税壁垒让&amp;quot;靠人多、靠低价&amp;quot;的薄利模式走不通了。&lt;/p&gt;
+&lt;p&gt;企业面临两个选择：把工厂搬到东南亚，或用技术把成本降下来。AI替代人工是主力方向。&lt;/p&gt;
+&lt;h3 id=&#34;资本为何怕死且去人性化&#34;&gt;资本为何&amp;quot;怕死&amp;quot;且&amp;quot;去人性化&amp;quot;？&lt;/h3&gt;
+&lt;p&gt;资本第一反应往往不是&amp;quot;培养更多人才&amp;quot;，而是&amp;quot;减少对人的依赖&amp;quot;。&lt;/p&gt;
+&lt;p&gt;原因很简单：人有情绪，会罢工，会要求涨薪。AI不会——只要服务器运行、有电，它就能24小时工作，没有怨言，不要求股权，不会因为看了个新闻就愤而辞职。&lt;/p&gt;
+&lt;p&gt;这种对&amp;quot;去人性化&amp;quot;的强烈需求，直接冲击人力资本重建。首当其冲的，是那些受过良好教育、具有较强专业能力、思想活跃的城市中产群体。&lt;/p&gt;
+&lt;p&gt;讽刺的是：当这些高收入、有话语权、可能对现状不满的群体，突然发现自己的专业技能在AI面前变得一文不值时，他们除了重新学习做&amp;quot;prompt工程师&amp;quot;，还能做什么？&lt;/p&gt;
+&lt;h2 id=&#34;四ai平权的双刃剑效应&#34;&gt;四、AI平权的双刃剑效应&lt;/h2&gt;
+&lt;h3 id=&#34;平权机遇的另一面&#34;&gt;平权机遇的另一面&lt;/h3&gt;
+&lt;p&gt;必须承认，AI确实带来了某种程度上的&amp;quot;平权&amp;quot;。普通人终于有了进入高门槛行业的机会：以前拍电影需要几百万的设备和专业团队，现在一个人拿着手机加AI工具就能生成一部短片；以前做建筑设计需要科班出身，现在画个小图，AI能帮你生成完整的图纸。&lt;/p&gt;
+&lt;p&gt;然而，当所有人都能轻易进入时，那条赛道还叫赛道吗？&lt;/p&gt;
+&lt;p&gt;以设计行业为例。假设你是一个入行10年的设计师，当年熬夜画图5年，又熬了5年改图跑项目，才爬到今天的位置。你的专业技能、审美判断、行业人脉是你吃饭的家伙。&lt;/p&gt;
+&lt;p&gt;现在AI设计工具出来了。一个刚毕业的本科生，花两个月学会prompt，就能在三天内生成你花两周才能做出的方案。那个方案可能细节不够完善、结构有瑕疵、不符合某些行业的设计规范，但甲方看不出区别。甲方只看效果图，只看快不快、好不好。&lt;/p&gt;
+&lt;p&gt;于是，你的专业壁垒被砸碎了。&lt;/p&gt;
+&lt;h3 id=&#34;价格战的必然结局&#34;&gt;价格战的必然结局&lt;/h3&gt;
+&lt;p&gt;技术门槛降低，必然出现大量非科班出身的人涌入。已得利益者会怎么做？他们会开始强调：专业伦理、职业操守、行业规范。听起来很正当，但实际上会用一套新的考核体系，把那些&amp;quot;只会用AI但没有路子的人&amp;quot;重新挡在门外。&lt;/p&gt;
+&lt;p&gt;以前看设计质量，现在AI让设计质量拉不开差距了。怎么筛选人？就看能不能搞定甲方、认不认识设计院的人。这些软性资源，AI帮不了你，只能靠关系、靠圈子、靠多年积累。&lt;/p&gt;
+&lt;p&gt;结果是：技术门槛降低了，但关系门槛提高了。&lt;/p&gt;
+&lt;h2 id=&#34;五已得利益者的言行不一&#34;&gt;五、已得利益者的&amp;quot;言行不一&amp;quot;&lt;/h2&gt;
+&lt;p&gt;中产在公开场合怎么说AI？全是拥抱的姿态——&amp;ldquo;我们要积极推动AI变革&amp;rdquo;、&amp;ldquo;不能落后于时代&amp;rdquo;、&amp;ldquo;要抓住数字化转型的机遇&amp;rdquo;。各种场合纷纷表态支持AI发展。&lt;/p&gt;
+&lt;p&gt;为什么？因为公开反对AI等于公开反对进步，等于承认自己已经被时代抛弃。所以他们的策略是：姿态上比谁都积极。&lt;/p&gt;
+&lt;p&gt;但落地的时候呢？他们可能把AI拦在核心业务外。&lt;/p&gt;
+&lt;p&gt;一个设计公司的高级合伙人让员工用AI写通知，让实习生用AI查资料，但涉及核心客户的资料、关键项目的方案，他会用AI吗？大概率不会。&lt;/p&gt;
+&lt;p&gt;他会用自己的经验与私人关系去摸对方的底牌。这些软性信息，这些靠多年积累的关系优势，才真正值钱。这些东西从来不&amp;quot;上网&amp;quot;，不在任何数据库里，只在他的脑子里。&lt;/p&gt;
+&lt;h2 id=&#34;六未来职场两个圈子的分化&#34;&gt;六、未来职场：两个圈子的分化&lt;/h2&gt;
+&lt;h3 id=&#34;技术圈与人脉圈&#34;&gt;技术圈与人脉圈&lt;/h3&gt;
+&lt;p&gt;未来，职场可能会分化成两个圈子：&lt;/p&gt;
+&lt;p&gt;技术圈全是精通AI、一个人当十个人用的&amp;quot;超级个体&amp;quot;。他们能力强、效率高，但他们是干活的人。&lt;/p&gt;
+&lt;p&gt;人脉圈全是那些有关系、有资源、能调动各方的人。他们可能技术一般，甚至根本不懂技术细节，但他们掌握着项目的入口、审批的关卡、资源的分配。他们是分钱的人。&lt;/p&gt;
+&lt;p&gt;记住：干活的人分不到多少钱，分钱的人不干活。&lt;/p&gt;
+&lt;h3 id=&#34;ai是更好的管理工具&#34;&gt;AI是更好的管理工具&lt;/h3&gt;
+&lt;p&gt;已得利益者明面上不会反对AI的，AI对他们来说是更好的管理工具。&lt;/p&gt;
+&lt;p&gt;AI让技术精英变得&amp;quot;可替代&amp;quot;了。以前一个技术大牛，老板还得哄着他，他敢跟老板拍桌子。现在AI把他的能力复制了N份，公司里有无数个&amp;quot;他&amp;quot;，他还哪有底气？&lt;/p&gt;
+&lt;p&gt;而那些有关系的人，不管AI怎么变，只要审批权还在他们手里，只要项目还得过他们那一关，他们就很难被替代。&lt;/p&gt;
+&lt;h3 id=&#34;关系从未离开&#34;&gt;关系从未离开&lt;/h3&gt;
+&lt;p&gt;这看起来像是回到&amp;quot;靠关系吃饭&amp;quot;的时代，但&amp;quot;关系&amp;quot;从未离开过，它只是在技术冲击下变得更隐蔽了。&lt;/p&gt;
+&lt;p&gt;在&amp;quot;拼能力的时代&amp;quot;，能力本身就是一种门槛，能挡住一部分关系户。但现在AI把能力门槛降低了，关系户的劣势被磨平了——你靠关系进来，AI帮你干活，你一样能把事情完成。关系的重要性反而变大了。&lt;/p&gt;
+&lt;h2 id=&#34;七谁是ai游戏的真正赢家&#34;&gt;七、谁是AI游戏的真正赢家？&lt;/h2&gt;
+&lt;p&gt;这一轮AI博弈，赢家有两类：&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;第一类：资源掌控者。&lt;/strong&gt; 他们掌握着资金、人脉、审批权。AI对他们来说是增效工具——用更少的人赚更多的钱。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;第二类：极少数的超级个体。&lt;/strong&gt; 那些把AI玩到极致、能跨界整合、有个人品牌的人。他们不依附于任何组织，自己就是一家公司。&lt;/p&gt;
+&lt;p&gt;输家是谁？中间层。那些靠专业壁垒吃饭的设计师、会计师、工程师、律师。他们的技能正在被AI替代，经验正在被AI清零。&lt;/p&gt;
+&lt;p&gt;还有那些以为&amp;quot;学会AI就安全了&amp;quot;的人。当所有人都会用AI的时候，会用的价值就是零。&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>
