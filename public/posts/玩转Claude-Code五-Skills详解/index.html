@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="light">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>玩转Claude Code(五)-Skills详解 | ByteZhou的个人空间</title>
+<meta name="keywords" content="">
+<meta name="description" content="大家好，我是bytezhou，玩转Claude Code(四)中介绍了Slash Commands，今天，我们来详细分析AI Agent圈中一个如日中天的能力：Skills。
+我们之前用Slash Commands来封装工作流程，相比每次复制Prompt，确实&quot;进化&quot;了，但需要我们自己主动调用命令，总觉得差点意思。有没有一种更智能的方式，让AI自己去调用？这就是接下来要讲的Skills。
+简单打个比方，Slash Commands像是给AI员工派活；Skills则是给它建个&quot;技能库&quot;，它自己知道该用哪个。
+1.Skills：Agent&quot;智能&quot;的表现
+要理解Skills，得先明白&quot;命令&quot;和&quot;技能&quot;有什么区别。
+
+命令（Slash Command）：由用户主动发起，我敲键盘，明确告诉 AI：&ldquo;去，把那段代码给我审一遍&rdquo;。
+技能（Skills）：像个&quot;自我介绍&quot;。写好放那儿，它自己会向AI说：&ldquo;我擅长审查代码，有需要喊我&rdquo;。
+
+差别在这儿：
+
+Slash Commands是人驱动的，我不动，AI不动。
+Skills是AI模型驱动的，AI拿到需求后，会自己跑到&quot;技能库&quot;里查找，觉得匹配就自己加载、执行了。
+
+**这就是Agent&quot;智能&quot;的表现。**我们不用记那么多命令，只需要像建图书馆一样，帮AI丰富它的&quot;藏书&quot;，它自己会去检索技能、应用技能。
+2.Skill长啥样？
+所谓的Skill，其实就是一套标准化的文件及目录结构。
+2.1 基本结构：一个文件夹 &#43; 一个SKILL.md
+最基础的Skill，就是一个目录里塞一个SKILL.md：
+my-skill/
+└── SKILL.md
+SKILL.md文件主要由两部分构成：
+
+YAML元数据：主要包括name和description。name是Skill的名称标识；description非常重要，主要描述了该Skill的功能和触发时机，是给AI看的&quot;索引关键词&quot;，不能写糊弄了。
+Body正文：该Skill具体的执行步骤。
+
+---
+name: skill-name
+description: 功能描述和触发时机
+---
+
+# 执行步骤...
+2.2 高级结构：带上工具箱
+复杂的Skill，把不同的工具、模块化的处理步骤、其他文件引用、脚本等一起放进去：
+market-analyse-skill/
+├── SKILL.md          # 技能入口，负责整体调度
+├── user.md           # 专门分析用户画像的详细步骤
+├── sale.md           # 专门分析营销额的详细步骤
+└── scripts/
+    └── calc_marketing.py  # 计算营销额的python脚本，被SKILL.md调用
+上面是一个&quot;市场分析&quot;的Skill，在这个结构中，SKILL.md是技能入口，负责整体调度，它会告诉AI：&ldquo;要进行用户画像分析，去查user.md；要计算营销额，去调用calc_marketing.py脚本&rdquo;。
+2.3 放哪儿：项目级 vs 用户级
+和CLAUDE.md、Slash Commands一样，Skills分为 项目级 和 用户级：
+
+项目 Skills（放 项目根目录/.claude/skills/）：跟项目走，团队共享，可以提交到Git。
+用户 Skills（放 ~/.claude/skills/）：自己用，对本地所有项目均生效，无需提交到Git。
+
+3.核心加载机制：渐进式披露
+下面介绍Skills的核心加载机制：渐进式披露，有效解决了&quot;知识库无限大&quot;和&quot;上下文窗口有限&quot;的矛盾。">
+<meta name="author" content="ByteZhou">
+<link rel="canonical" href="http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%BA%94-Skills%E8%AF%A6%E8%A7%A3/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.b2fb3e76a8c11c585aa2c220e844461da3987fd48a6ceb221ea5c631333c5751.css" integrity="sha256-svs&#43;dqjBHFhaosIg6ERGHaOYf9SKbOsiHqXGMTM8V1E=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%BA%94-Skills%E8%AF%A6%E8%A7%A3/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    }
+
+</script><meta property="og:url" content="http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%BA%94-Skills%E8%AF%A6%E8%A7%A3/">
+  <meta property="og:site_name" content="ByteZhou的个人空间">
+  <meta property="og:title" content="玩转Claude Code(五)-Skills详解">
+  <meta property="og:description" content="大家好，我是bytezhou，玩转Claude Code(四)中介绍了Slash Commands，今天，我们来详细分析AI Agent圈中一个如日中天的能力：Skills。
+我们之前用Slash Commands来封装工作流程，相比每次复制Prompt，确实&#34;进化&#34;了，但需要我们自己主动调用命令，总觉得差点意思。有没有一种更智能的方式，让AI自己去调用？这就是接下来要讲的Skills。
+简单打个比方，Slash Commands像是给AI员工派活；Skills则是给它建个&#34;技能库&#34;，它自己知道该用哪个。
+1.Skills：Agent&#34;智能&#34;的表现 要理解Skills，得先明白&#34;命令&#34;和&#34;技能&#34;有什么区别。
+命令（Slash Command）：由用户主动发起，我敲键盘，明确告诉 AI：“去，把那段代码给我审一遍”。 技能（Skills）：像个&#34;自我介绍&#34;。写好放那儿，它自己会向AI说：“我擅长审查代码，有需要喊我”。 差别在这儿：
+Slash Commands是人驱动的，我不动，AI不动。 Skills是AI模型驱动的，AI拿到需求后，会自己跑到&#34;技能库&#34;里查找，觉得匹配就自己加载、执行了。 **这就是Agent&#34;智能&#34;的表现。**我们不用记那么多命令，只需要像建图书馆一样，帮AI丰富它的&#34;藏书&#34;，它自己会去检索技能、应用技能。
+2.Skill长啥样？ 所谓的Skill，其实就是一套标准化的文件及目录结构。
+2.1 基本结构：一个文件夹 &#43; 一个SKILL.md 最基础的Skill，就是一个目录里塞一个SKILL.md：
+my-skill/ └── SKILL.md SKILL.md文件主要由两部分构成：
+YAML元数据：主要包括name和description。name是Skill的名称标识；description非常重要，主要描述了该Skill的功能和触发时机，是给AI看的&#34;索引关键词&#34;，不能写糊弄了。 Body正文：该Skill具体的执行步骤。 --- name: skill-name description: 功能描述和触发时机 --- # 执行步骤... 2.2 高级结构：带上工具箱 复杂的Skill，把不同的工具、模块化的处理步骤、其他文件引用、脚本等一起放进去：
+market-analyse-skill/ ├── SKILL.md # 技能入口，负责整体调度 ├── user.md # 专门分析用户画像的详细步骤 ├── sale.md # 专门分析营销额的详细步骤 └── scripts/ └── calc_marketing.py # 计算营销额的python脚本，被SKILL.md调用 上面是一个&#34;市场分析&#34;的Skill，在这个结构中，SKILL.md是技能入口，负责整体调度，它会告诉AI：“要进行用户画像分析，去查user.md；要计算营销额，去调用calc_marketing.py脚本”。
+2.3 放哪儿：项目级 vs 用户级 和CLAUDE.md、Slash Commands一样，Skills分为 项目级 和 用户级：
+项目 Skills（放 项目根目录/.claude/skills/）：跟项目走，团队共享，可以提交到Git。 用户 Skills（放 ~/.claude/skills/）：自己用，对本地所有项目均生效，无需提交到Git。 3.核心加载机制：渐进式披露 下面介绍Skills的核心加载机制：渐进式披露，有效解决了&#34;知识库无限大&#34;和&#34;上下文窗口有限&#34;的矛盾。">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2026-04-10T19:37:30+10:00">
+    <meta property="article:modified_time" content="2026-04-10T19:37:30+10:00">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="玩转Claude Code(五)-Skills详解">
+  <meta name="twitter:description" content="大家好，我是bytezhou，玩转Claude Code(四)中介绍了Slash Commands，今天，我们来详细分析AI Agent圈中一个如日中天的能力：Skills。
+我们之前用Slash Commands来封装工作流程，相比每次复制Prompt，确实&#34;进化&#34;了，但需要我们自己主动调用命令，总觉得差点意思。有没有一种更智能的方式，让AI自己去调用？这就是接下来要讲的Skills。
+简单打个比方，Slash Commands像是给AI员工派活；Skills则是给它建个&#34;技能库&#34;，它自己知道该用哪个。
+1.Skills：Agent&#34;智能&#34;的表现 要理解Skills，得先明白&#34;命令&#34;和&#34;技能&#34;有什么区别。
+命令（Slash Command）：由用户主动发起，我敲键盘，明确告诉 AI：“去，把那段代码给我审一遍”。 技能（Skills）：像个&#34;自我介绍&#34;。写好放那儿，它自己会向AI说：“我擅长审查代码，有需要喊我”。 差别在这儿：
+Slash Commands是人驱动的，我不动，AI不动。 Skills是AI模型驱动的，AI拿到需求后，会自己跑到&#34;技能库&#34;里查找，觉得匹配就自己加载、执行了。 **这就是Agent&#34;智能&#34;的表现。**我们不用记那么多命令，只需要像建图书馆一样，帮AI丰富它的&#34;藏书&#34;，它自己会去检索技能、应用技能。
+2.Skill长啥样？ 所谓的Skill，其实就是一套标准化的文件及目录结构。
+2.1 基本结构：一个文件夹 &#43; 一个SKILL.md 最基础的Skill，就是一个目录里塞一个SKILL.md：
+my-skill/ └── SKILL.md SKILL.md文件主要由两部分构成：
+YAML元数据：主要包括name和description。name是Skill的名称标识；description非常重要，主要描述了该Skill的功能和触发时机，是给AI看的&#34;索引关键词&#34;，不能写糊弄了。 Body正文：该Skill具体的执行步骤。 --- name: skill-name description: 功能描述和触发时机 --- # 执行步骤... 2.2 高级结构：带上工具箱 复杂的Skill，把不同的工具、模块化的处理步骤、其他文件引用、脚本等一起放进去：
+market-analyse-skill/ ├── SKILL.md # 技能入口，负责整体调度 ├── user.md # 专门分析用户画像的详细步骤 ├── sale.md # 专门分析营销额的详细步骤 └── scripts/ └── calc_marketing.py # 计算营销额的python脚本，被SKILL.md调用 上面是一个&#34;市场分析&#34;的Skill，在这个结构中，SKILL.md是技能入口，负责整体调度，它会告诉AI：“要进行用户画像分析，去查user.md；要计算营销额，去调用calc_marketing.py脚本”。
+2.3 放哪儿：项目级 vs 用户级 和CLAUDE.md、Slash Commands一样，Skills分为 项目级 和 用户级：
+项目 Skills（放 项目根目录/.claude/skills/）：跟项目走，团队共享，可以提交到Git。 用户 Skills（放 ~/.claude/skills/）：自己用，对本地所有项目均生效，无需提交到Git。 3.核心加载机制：渐进式披露 下面介绍Skills的核心加载机制：渐进式披露，有效解决了&#34;知识库无限大&#34;和&#34;上下文窗口有限&#34;的矛盾。">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "http://localhost:1313/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "玩转Claude Code(五)-Skills详解",
+      "item": "http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%BA%94-Skills%E8%AF%A6%E8%A7%A3/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "玩转Claude Code(五)-Skills详解",
+  "name": "玩转Claude Code(五)-Skills详解",
+  "description": "大家好，我是bytezhou，玩转Claude Code(四)中介绍了Slash Commands，今天，我们来详细分析AI Agent圈中一个如日中天的能力：Skills。\n我们之前用Slash Commands来封装工作流程，相比每次复制Prompt，确实\u0026quot;进化\u0026quot;了，但需要我们自己主动调用命令，总觉得差点意思。有没有一种更智能的方式，让AI自己去调用？这就是接下来要讲的Skills。\n简单打个比方，Slash Commands像是给AI员工派活；Skills则是给它建个\u0026quot;技能库\u0026quot;，它自己知道该用哪个。\n1.Skills：Agent\u0026quot;智能\u0026quot;的表现 要理解Skills，得先明白\u0026quot;命令\u0026quot;和\u0026quot;技能\u0026quot;有什么区别。\n命令（Slash Command）：由用户主动发起，我敲键盘，明确告诉 AI：\u0026ldquo;去，把那段代码给我审一遍\u0026rdquo;。 技能（Skills）：像个\u0026quot;自我介绍\u0026quot;。写好放那儿，它自己会向AI说：\u0026ldquo;我擅长审查代码，有需要喊我\u0026rdquo;。 差别在这儿：\nSlash Commands是人驱动的，我不动，AI不动。 Skills是AI模型驱动的，AI拿到需求后，会自己跑到\u0026quot;技能库\u0026quot;里查找，觉得匹配就自己加载、执行了。 **这就是Agent\u0026quot;智能\u0026quot;的表现。**我们不用记那么多命令，只需要像建图书馆一样，帮AI丰富它的\u0026quot;藏书\u0026quot;，它自己会去检索技能、应用技能。\n2.Skill长啥样？ 所谓的Skill，其实就是一套标准化的文件及目录结构。\n2.1 基本结构：一个文件夹 + 一个SKILL.md 最基础的Skill，就是一个目录里塞一个SKILL.md：\nmy-skill/ └── SKILL.md SKILL.md文件主要由两部分构成：\nYAML元数据：主要包括name和description。name是Skill的名称标识；description非常重要，主要描述了该Skill的功能和触发时机，是给AI看的\u0026quot;索引关键词\u0026quot;，不能写糊弄了。 Body正文：该Skill具体的执行步骤。 --- name: skill-name description: 功能描述和触发时机 --- # 执行步骤... 2.2 高级结构：带上工具箱 复杂的Skill，把不同的工具、模块化的处理步骤、其他文件引用、脚本等一起放进去：\nmarket-analyse-skill/ ├── SKILL.md # 技能入口，负责整体调度 ├── user.md # 专门分析用户画像的详细步骤 ├── sale.md # 专门分析营销额的详细步骤 └── scripts/ └── calc_marketing.py # 计算营销额的python脚本，被SKILL.md调用 上面是一个\u0026quot;市场分析\u0026quot;的Skill，在这个结构中，SKILL.md是技能入口，负责整体调度，它会告诉AI：\u0026ldquo;要进行用户画像分析，去查user.md；要计算营销额，去调用calc_marketing.py脚本\u0026rdquo;。\n2.3 放哪儿：项目级 vs 用户级 和CLAUDE.md、Slash Commands一样，Skills分为 项目级 和 用户级：\n项目 Skills（放 项目根目录/.claude/skills/）：跟项目走，团队共享，可以提交到Git。 用户 Skills（放 ~/.claude/skills/）：自己用，对本地所有项目均生效，无需提交到Git。 3.核心加载机制：渐进式披露 下面介绍Skills的核心加载机制：渐进式披露，有效解决了\u0026quot;知识库无限大\u0026quot;和\u0026quot;上下文窗口有限\u0026quot;的矛盾。\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "大家好，我是bytezhou，玩转Claude Code(四)中介绍了Slash Commands，今天，我们来详细分析AI Agent圈中一个如日中天的能力：Skills。\n我们之前用Slash Commands来封装工作流程，相比每次复制Prompt，确实\"进化\"了，但需要我们自己主动调用命令，总觉得差点意思。有没有一种更智能的方式，让AI自己去调用？这就是接下来要讲的Skills。\n简单打个比方，Slash Commands像是给AI员工派活；Skills则是给它建个\"技能库\"，它自己知道该用哪个。\n1.Skills：Agent\"智能\"的表现 要理解Skills，得先明白\"命令\"和\"技能\"有什么区别。\n命令（Slash Command）：由用户主动发起，我敲键盘，明确告诉 AI：“去，把那段代码给我审一遍”。 技能（Skills）：像个\"自我介绍\"。写好放那儿，它自己会向AI说：“我擅长审查代码，有需要喊我”。 差别在这儿：\nSlash Commands是人驱动的，我不动，AI不动。 Skills是AI模型驱动的，AI拿到需求后，会自己跑到\"技能库\"里查找，觉得匹配就自己加载、执行了。 **这就是Agent\"智能\"的表现。**我们不用记那么多命令，只需要像建图书馆一样，帮AI丰富它的\"藏书\"，它自己会去检索技能、应用技能。\n2.Skill长啥样？ 所谓的Skill，其实就是一套标准化的文件及目录结构。\n2.1 基本结构：一个文件夹 + 一个SKILL.md 最基础的Skill，就是一个目录里塞一个SKILL.md：\nmy-skill/ └── SKILL.md SKILL.md文件主要由两部分构成：\nYAML元数据：主要包括name和description。name是Skill的名称标识；description非常重要，主要描述了该Skill的功能和触发时机，是给AI看的\"索引关键词\"，不能写糊弄了。 Body正文：该Skill具体的执行步骤。 --- name: skill-name description: 功能描述和触发时机 --- # 执行步骤... 2.2 高级结构：带上工具箱 复杂的Skill，把不同的工具、模块化的处理步骤、其他文件引用、脚本等一起放进去：\nmarket-analyse-skill/ ├── SKILL.md # 技能入口，负责整体调度 ├── user.md # 专门分析用户画像的详细步骤 ├── sale.md # 专门分析营销额的详细步骤 └── scripts/ └── calc_marketing.py # 计算营销额的python脚本，被SKILL.md调用 上面是一个\"市场分析\"的Skill，在这个结构中，SKILL.md是技能入口，负责整体调度，它会告诉AI：“要进行用户画像分析，去查user.md；要计算营销额，去调用calc_marketing.py脚本”。\n2.3 放哪儿：项目级 vs 用户级 和CLAUDE.md、Slash Commands一样，Skills分为 项目级 和 用户级：\n项目 Skills（放 项目根目录/.claude/skills/）：跟项目走，团队共享，可以提交到Git。 用户 Skills（放 ~/.claude/skills/）：自己用，对本地所有项目均生效，无需提交到Git。 3.核心加载机制：渐进式披露 下面介绍Skills的核心加载机制：渐进式披露，有效解决了\"知识库无限大\"和\"上下文窗口有限\"的矛盾。\n这是个\"三层检索系统\"：\n第一层：看\"索引\"（发现层）：CC启动时，只扫描所有Skill的元数据的name和description，塞进上下文窗口里，“脑子\"里只记个索引目录，负担小，占用token非常低。 第二层：翻\"正文”（触发层）：只有任务匹配上了某个Skill的description，CC才会去把那个Skill的SKILL.md正文加载进上下文窗口，现用现看，不看的时候不占token。 第三层：查\"附录\"（深度执行层）：SKILL.md里要显示调用某个脚本func.py，只有执行到那一步，CC才会去读那个脚本文件，这是深层次的按需加载，可以极大的扩展Skill的能力。 这个机制让Skill既强大（能装很多东西）、又高效（不占多余token），结合上面Skill的标准化文件及目录形式，可以跨项目移植。\n4.Skills vs Slash Commands 对比维度 Skills Slash Commands 调用方 AI 用户 发现方式 AI通过匹配元数据中description自主发现 用户自己记忆，或者通过\"/“查找 调用模式 声明式：“我可以干…你在什么时候来调用…” 命令式：“现在，去干…” 使用场景 让AI自主完成的开放式任务 确定的、由人主动发起的任务 我的个人经验：\n想一键主动触发固定流程 → Slash Command。 想让AI自动识别场景、自动触发调用 → Skills。 5.实例：写一个java-code-reviewer的Skill 把之前审查java代码的Slash Command，改写成Skill：java-code-reviewer。\n（一）创建一个用户级Skill：\n1 mkdir -p ~/.claude/skills/java-code-reviewer （二）写 SKILL.md\n把原来命令的工作流步骤，按Skill的格式重组。注意description字段，这是给AI检索用的\"关键词”：\n~/.claude/skills/java-code-reviewer/SKILL.md\n--- name: java-code-reviewer description: 专用于java代码审查。当用户提到审查java代码、看看代码写的咋样、检查代码质量、是否合规时触发该技能 --- # java-code-reviewer ## 功能 本技能用于对java代码进行专业深入的审查。 ## 审查步骤 当用该技能对java代码进行审查时，必须遵循以下步骤： 1. 加载代码规范：从`CLAUDE.md`中获取java代码规范。若找不到用户明确定义的java代码规范，请参考网上java最佳实践。 2. 确定审查范围：明确用户要审查的代码范围（一般通过`@`指定），文件或目录。 3. 逐一审查代码：根据java代码规范、或java最佳实践，对目标代码逐一分析、审查。 4. 输出审查报告：按如下输出格式（必须遵守），生成一份markdown格式的审查报告。 ## 输出格式 - 整体评价：请整体评价目标代码质量。 - 问题项： - [高危]：必须改的问题（比如有潜在隐患、或违反`单一职责`的问题）。 - [中危]：建议修改的问题（比如设计模式优化）。 - [低危]：代码风格或可读性问题。 对每一个**问题项**，请列出**文件名、行号、问题描述、修改建议**。 （三）测试\n把原来的Slash Command删了，重启CC，加载java-code-reviewer后，直接对CC说：\n“@rpc-netty/src/main/java/com/github/liyue2008/rpc 帮我看一下这个目录下的java代码写的咋样”\nCC会自动匹配上java-code-reviewer这个Skill：\n最终输出符合要求的审查报告：\n6.几点建议 折腾了一圈，关于写Skill有几点建议：\n一个Skill只干一件事：别搞大杂烩，拆成几个小Skill，也别整一个\"大而全\"的Skill。职责单一，AI才匹配得准，上下文也越小。 精心打磨description：description是Skill的\"索引\"，写的越精确，AI才能精准触发。不要写\"分析文件\"这种废话；要写清楚能干啥、啥时候用，比如：“用来分析pdf文件，提取表单内容。当提到处理pdf文件、提取表单内容、分析.pdf、分析文件、或提取文件内容时触发”。 迭代Skill：Skill也需要迭代，团队共用时，给Skill添加修改记录。 7.让AI来创建Skill 手搓Skill，和古法编程一样，均为下下策。AI时代，让AI来生成Skill，才是正常玩法。\nAnthropic已经开源出了skill-creator，它也是一个Skill，但你可以理解成Skill的Skill（元技能），专门用来引导用户创建Skill。用这玩意，你不用再学习SKILL.md的结构，直接在CC的对话流中，用人类语言交互来创建Skill。\n2种方式安装skill-creator：\n通过 plugins 安装：先添加CC的官方插件市场，然后用/plugin命令，在官方插件中，找到skill-creator的插件，直接安装并启用即可（均在对话界面交互式操作完成）。 直接拷贝 skill-creator：直接去Anthropic在github的官方插件仓库（https://github.com/anthropics/claude-plugins-official），找到插件中的skill-creator，把内层的\"skill-creator\"目录整体下载下来，再整体拷贝到项目级、或用户级的skill目录下即可。 现在来简单演示下，如何用skill-creator创建一个\"根据某篇文章的风格，来改写另一篇文章的\"Skill。\n直接用人类语言告诉CC，你要创建一个Skill了：\n我想创建一个\"根据某篇文章的风格，来改写另一篇文章\"的Skill，请帮我创建 可以看到，CC自动加载了skill-creator来创建\"文风改写\"Skill，并给出了一系列引导式提问。\n补充了问题回答后，skill-creator就会帮你创建这个Skill，以下是最终生成的\"文风改写\"Skill：\n--- name: style-rewrite description: 用指定文章的文风改写另一篇文章。当用户说\"用XXX的风格改写\"、\"模仿XX的语气\"、\"把某篇文章的风格应用到\"、\"这篇技术文档太生硬了，用更通俗的方式重写\"时使用此Skill。两篇文章均通过文件路径提供，先分析风格特征，再进行改写，输出到对话确认后再保存文件。 --- # Style Rewrite Skill 根据指定文章的文风，改写另一篇文章。 ## 输入 用户提供两个文件路径： 1. **风格源文件**（style_source.md）：要模仿的风格模板 2. **内容文件**（content.md）：需要被改写内容的原文 ## 工作流程 ### 第一步：读取文件 读取两个文件的内容： - 风格源文件：分析其写作风格特征 - 内容文件：需要改写的内容 如果用户只提供了一个文件路径，询问另一个文件的路径。 ### 第二步：风格分析 从以下维度分析风格源文件的特征，并在分析末尾注明字 数： **1. 句子维度** - 平均句长（字数） - 句式结构（短句为主/长句为主/长短结合） - 句式变化（是否频繁使用排比、问句、感叹句） **2. 词汇维度** - 用词风格（书面语/口语/混用） - 专业术语密度 - 形容词和副词的使用频率 - 是否使用比喻、拟人等修辞 **3. 结构维度** - 开头方式（直接切入/背景铺垫/提问引入） - 段落过渡方式 - 结尾方式（总结/升华/留白/行动号召） **4. 语气维度** - 正式程度（严谨/轻松/幽默） - 情感色彩（客观中立/主观表达/感召力） - 与读者的距离感（亲切/权威/平等对话） **5. 其他特征** - 是否有独特的个人风格标记（如特定的口头禅、常用表达） 输出格式： ``` ## 风格分析报告 **风格源文件**：[文件名] **内容文件**：[文件名] ### 句子维度 - 平均句长：X字 - 句式结构：... - 句式变化：... ### 词汇维度 - 用词风格：... - 术语密度：... - 修辞手法：... ### 结构维度 - 开头方式：... - 过渡方式：... - 结尾方式：... ### 语气维度 - 正式程度：... - 情感色彩：... - 读者距离：... ### 其他特征 - 特色表达：... **总字数**：XXX字 ``` ### 第三步：文风改写 将内容文件按照风格源文件的风格进行改写。 **改写原则：** 1. **保留核心信息**：原文的核心观点、关键数据、逻辑链条必须保留 2. **风格迁移**：尽量模仿源文件的句式、词汇、结构特征 3. **自然流畅**：避免生硬的句式翻译，让文字读起来自然 4. **适度调整**：如果原文某些表达在目标风格下显得突兀，可以适当调整 **改写步骤：** 1. 理解原文的核心内容和逻辑结构 2. 按照源风格的句子维度调整句式 3. 按照源风格的词汇偏好选择用词 4. 应用源风格的开头、过渡、结尾方式 5. 检查是否保留了源风格的关键特征 ### 第四步：输出结果 将改写后的文章完整输出到对话中，格式： ``` ## 文风改写结果 **风格源**：[文件名] **原文**：[文件名] --- [改写后的全文] --- **改写说明**： - 简要说明做了哪些主要调整 - 如果有与源风格差异较大的地方，说明原因 ``` ### 第五步：保存确认 输出完成后，询问用户： \u003e 改写完成。是否需要保存到文件？如需保存，请提供文件名（默认：`[原内容文件名]_改写版.md`）。 - 如果用户确认保存：写入文件并告知保存路径 - 如果用户要求修改：了解需要修改的部分，进行针对性调整后重新输出 ## 注意事项 - 如果两个文件中有重复或相关的内容，在分析时注明 - 如果内容文件较短而风格源文件较长，重点关注风格源文件中与内容相关的部分 - 改写时优先保证内容准确性，其次才是风格匹配度 结语 Skills真正的给AI赋能，以前给它写\"脚本\"（Prompt），现在给它建\"能力库\"。\n掌握Skills，意味着用更高级的方式\"编程\"AI，它不再戳一下动一下，开始学会自己翻\"工具箱\"了。\n下一篇，将介绍MCP，真正的扩展了AI的能力边界。\n感谢你点开这篇文章，欢迎关注我的公众号：10年码农，纯技术分享，一起在AI时代探索未来！\n客官您满意的话，感谢打赏。\n",
+  "wordCount" : "363",
+  "inLanguage": "en",
+  "datePublished": "2026-04-10T19:37:30+10:00",
+  "dateModified": "2026-04-10T19:37:30+10:00",
+  "author":{
+    "@type": "Person",
+    "name": "ByteZhou"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%BA%94-Skills%E8%AF%A6%E8%A7%A3/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ByteZhou的个人空间",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://localhost:1313/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="ByteZhou的个人空间 (Alt + H)">ByteZhou的个人空间</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:1313/posts/" title="文章">
+                    <span>文章</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/categories/" title="分类">
+                    <span>分类</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/tags/" title="标签">
+                    <span>标签</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:1313/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:1313/posts/">Posts</a></div>
+    <h1 class="post-title entry-hint-parent">
+      玩转Claude Code(五)-Skills详解
+    </h1>
+    <div class="post-meta"><span title='2026-04-10 19:37:30 +1000 +1000'>April 10, 2026</span>&nbsp;·&nbsp;<span>ByteZhou</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>大家好，我是bytezhou，玩转Claude Code(四)中介绍了<code>Slash Commands</code>，今天，我们来详细分析<strong>AI Agent圈中一个如日中天的能力：<code>Skills</code></strong>。</p>
+<p>我们之前用<code>Slash Commands</code>来封装工作流程，相比每次复制<code>Prompt</code>，确实&quot;进化&quot;了，但需要我们自己主动调用命令，总觉得差点意思。有没有一种更智能的方式，让AI自己去调用？这就是接下来要讲的<code>Skills</code>。</p>
+<p>简单打个比方，<strong><code>Slash Commands</code>像是给AI员工派活；<code>Skills</code>则是给它建个&quot;技能库&quot;，它自己知道该用哪个。</strong></p>
+<h2 id="1skillsagent智能的表现">1.Skills：Agent&quot;智能&quot;的表现<a hidden class="anchor" aria-hidden="true" href="#1skillsagent智能的表现">#</a></h2>
+<p>要理解<code>Skills</code>，得先明白&quot;命令&quot;和&quot;技能&quot;有什么区别。</p>
+<ul>
+<li><strong>命令（Slash Command）</strong>：由用户主动发起，我敲键盘，明确告诉 AI：&ldquo;去，把那段代码给我审一遍&rdquo;。</li>
+<li><strong>技能（Skills）</strong>：像个&quot;自我介绍&quot;。写好放那儿，它自己会向AI说：&ldquo;我擅长审查代码，有需要喊我&rdquo;。</li>
+</ul>
+<p><strong>差别在这儿：</strong></p>
+<ul>
+<li><strong>Slash Commands是人驱动的</strong>，我不动，AI不动。</li>
+<li><strong>Skills是AI模型驱动的</strong>，AI拿到需求后，会自己跑到&quot;技能库&quot;里查找，觉得匹配就自己加载、执行了。</li>
+</ul>
+<p>**这就是Agent&quot;智能&quot;的表现。**我们不用记那么多命令，只需要像建图书馆一样，帮AI丰富它的&quot;藏书&quot;，它自己会去检索技能、应用技能。</p>
+<h2 id="2skill长啥样">2.Skill长啥样？<a hidden class="anchor" aria-hidden="true" href="#2skill长啥样">#</a></h2>
+<p>所谓的<code>Skill</code>，其实就是一套标准化的文件及目录结构。</p>
+<h3 id="21-基本结构一个文件夹--一个skillmd">2.1 基本结构：一个文件夹 + 一个<code>SKILL.md</code><a hidden class="anchor" aria-hidden="true" href="#21-基本结构一个文件夹--一个skillmd">#</a></h3>
+<p>最基础的<code>Skill</code>，就是一个目录里塞一个<code>SKILL.md</code>：</p>
+<pre tabindex="0"><code>my-skill/
+└── SKILL.md
+</code></pre><p><code>SKILL.md</code>文件主要由两部分构成：</p>
+<ul>
+<li><strong>YAML元数据</strong>：主要包括<code>name</code>和<code>description</code>。<code>name</code>是Skill的名称标识；<strong><code>description</code>非常重要，主要描述了该Skill的功能和触发时机，是给AI看的&quot;索引关键词&quot;，不能写糊弄了</strong>。</li>
+<li><strong>Body正文</strong>：该Skill具体的执行步骤。</li>
+</ul>
+<pre tabindex="0"><code>---
+name: skill-name
+description: 功能描述和触发时机
+---
+
+# 执行步骤...
+</code></pre><h3 id="22-高级结构带上工具箱">2.2 高级结构：带上工具箱<a hidden class="anchor" aria-hidden="true" href="#22-高级结构带上工具箱">#</a></h3>
+<p>复杂的<code>Skill</code>，把不同的工具、模块化的处理步骤、其他文件引用、脚本等一起放进去：</p>
+<pre tabindex="0"><code>market-analyse-skill/
+├── SKILL.md          # 技能入口，负责整体调度
+├── user.md           # 专门分析用户画像的详细步骤
+├── sale.md           # 专门分析营销额的详细步骤
+└── scripts/
+    └── calc_marketing.py  # 计算营销额的python脚本，被SKILL.md调用
+</code></pre><p>上面是一个&quot;市场分析&quot;的Skill，在这个结构中，<code>SKILL.md</code>是技能入口，负责整体调度，它会告诉AI：&ldquo;要进行用户画像分析，去查<code>user.md</code>；要计算营销额，去调用<code>calc_marketing.py</code>脚本&rdquo;。</p>
+<h3 id="23-放哪儿项目级-vs-用户级">2.3 放哪儿：项目级 vs 用户级<a hidden class="anchor" aria-hidden="true" href="#23-放哪儿项目级-vs-用户级">#</a></h3>
+<p>和<code>CLAUDE.md</code>、<code>Slash Commands</code>一样，<code>Skills</code>分为 项目级 和 用户级：</p>
+<ul>
+<li><strong>项目 Skills（放 <code>项目根目录/.claude/skills/</code>）</strong>：跟项目走，团队共享，可以提交到Git。</li>
+<li><strong>用户 Skills（放 <code>~/.claude/skills/</code>）</strong>：自己用，对本地所有项目均生效，无需提交到Git。</li>
+</ul>
+<h2 id="3核心加载机制渐进式披露">3.核心加载机制：渐进式披露<a hidden class="anchor" aria-hidden="true" href="#3核心加载机制渐进式披露">#</a></h2>
+<p>下面介绍<code>Skills</code>的核心加载机制：<strong>渐进式披露</strong>，有效解决了&quot;知识库无限大&quot;和&quot;上下文窗口有限&quot;的矛盾。</p>
+<img src="cc_5_1.png">
+<p><strong>这是个&quot;三层检索系统&quot;：</strong></p>
+<ol>
+<li><strong>第一层：看&quot;索引&quot;（发现层）</strong>：CC启动时，只扫描所有Skill的元数据的<code>name</code>和<code>description</code>，塞进上下文窗口里，&ldquo;脑子&quot;里只记个索引目录，负担小，占用token非常低。</li>
+<li><strong>第二层：翻&quot;正文&rdquo;（触发层）</strong>：只有任务匹配上了某个Skill的<code>description</code>，CC才会去把那个Skill的<code>SKILL.md</code>正文加载进上下文窗口，现用现看，不看的时候不占token。</li>
+<li><strong>第三层：查&quot;附录&quot;（深度执行层）</strong>：<code>SKILL.md</code>里要显示调用某个脚本<code>func.py</code>，只有执行到那一步，CC才会去读那个脚本文件，这是深层次的按需加载，可以极大的扩展Skill的能力。</li>
+</ol>
+<p>这个机制让Skill既强大（能装很多东西）、又高效（不占多余token），结合上面Skill的标准化文件及目录形式，可以跨项目移植。</p>
+<h2 id="4skills-vs-slash-commands">4.Skills vs Slash Commands<a hidden class="anchor" aria-hidden="true" href="#4skills-vs-slash-commands">#</a></h2>
+<table>
+  <thead>
+      <tr>
+          <th style="text-align: center">对比维度</th>
+          <th style="text-align: center">Skills</th>
+          <th style="text-align: center">Slash Commands</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: center">调用方</td>
+          <td style="text-align: center">AI</td>
+          <td style="text-align: center">用户</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">发现方式</td>
+          <td style="text-align: center">AI通过匹配元数据中<code>description</code>自主发现</td>
+          <td style="text-align: center">用户自己记忆，或者通过&quot;/&ldquo;查找</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">调用模式</td>
+          <td style="text-align: center">声明式：&ldquo;我可以干&hellip;你在什么时候来调用&hellip;&rdquo;</td>
+          <td style="text-align: center">命令式：&ldquo;现在，去干&hellip;&rdquo;</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">使用场景</td>
+          <td style="text-align: center">让AI自主完成的开放式任务</td>
+          <td style="text-align: center">确定的、由人主动发起的任务</td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>我的个人经验：</strong></p>
+<ul>
+<li>想一键主动触发固定流程 → <strong>Slash Command</strong>。</li>
+<li>想让AI自动识别场景、自动触发调用 → <strong>Skills</strong>。</li>
+</ul>
+<h2 id="5实例写一个java-code-reviewer的skill">5.实例：写一个<code>java-code-reviewer</code>的Skill<a hidden class="anchor" aria-hidden="true" href="#5实例写一个java-code-reviewer的skill">#</a></h2>
+<p>把之前审查java代码的Slash Command，改写成Skill：<code>java-code-reviewer</code>。</p>
+<p><strong>（一）创建一个用户级Skill：</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir -p ~/.claude/skills/java-code-reviewer
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>（二）写 SKILL.md</strong></p>
+<p>把原来命令的工作流步骤，按Skill的格式重组。注意<code>description</code>字段，这是给AI检索用的&quot;关键词&rdquo;：</p>
+<p><code>~/.claude/skills/java-code-reviewer/SKILL.md</code></p>
+<pre tabindex="0"><code>---
+name: java-code-reviewer
+description: 专用于java代码审查。当用户提到审查java代码、看看代码写的咋样、检查代码质量、是否合规时触发该技能
+---
+
+# java-code-reviewer
+
+## 功能
+本技能用于对java代码进行专业深入的审查。
+
+## 审查步骤
+当用该技能对java代码进行审查时，必须遵循以下步骤：
+1. 加载代码规范：从`CLAUDE.md`中获取java代码规范。若找不到用户明确定义的java代码规范，请参考网上java最佳实践。
+2. 确定审查范围：明确用户要审查的代码范围（一般通过`@`指定），文件或目录。
+3. 逐一审查代码：根据java代码规范、或java最佳实践，对目标代码逐一分析、审查。
+4. 输出审查报告：按如下输出格式（必须遵守），生成一份markdown格式的审查报告。
+
+## 输出格式
+ - 整体评价：请整体评价目标代码质量。
+ - 问题项：
+      - [高危]：必须改的问题（比如有潜在隐患、或违反`单一职责`的问题）。
+      - [中危]：建议修改的问题（比如设计模式优化）。
+      - [低危]：代码风格或可读性问题。
+ 对每一个**问题项**，请列出**文件名、行号、问题描述、修改建议**。
+</code></pre><p><strong>（三）测试</strong></p>
+<p>把原来的Slash Command删了，重启CC，加载<code>java-code-reviewer</code>后，直接对CC说：</p>
+<p>&ldquo;@rpc-netty/src/main/java/com/github/liyue2008/rpc 帮我看一下这个目录下的java代码写的咋样&rdquo;</p>
+<p>CC会自动匹配上<code>java-code-reviewer</code>这个Skill：</p>
+<img src="cc_5_2.png">
+<p>最终输出符合要求的审查报告：</p>
+<img src="cc_5_3.png">
+<h2 id="6几点建议">6.几点建议<a hidden class="anchor" aria-hidden="true" href="#6几点建议">#</a></h2>
+<p>折腾了一圈，关于写Skill有几点建议：</p>
+<ol>
+<li><strong>一个Skill只干一件事</strong>：别搞大杂烩，拆成几个小Skill，也别整一个&quot;大而全&quot;的Skill。职责单一，AI才匹配得准，上下文也越小。</li>
+<li><strong>精心打磨description</strong>：<code>description</code>是Skill的&quot;索引&quot;，写的越精确，AI才能精准触发。不要写&quot;分析文件&quot;这种废话；要写清楚能干啥、啥时候用，比如：&ldquo;用来分析pdf文件，提取表单内容。当提到处理pdf文件、提取表单内容、分析.pdf、分析文件、或提取文件内容时触发&rdquo;。</li>
+<li><strong>迭代Skill</strong>：Skill也需要迭代，团队共用时，给Skill添加修改记录。</li>
+</ol>
+<h2 id="7让ai来创建skill">7.让AI来创建Skill<a hidden class="anchor" aria-hidden="true" href="#7让ai来创建skill">#</a></h2>
+<p>手搓<code>Skill</code>，和<code>古法编程</code>一样，均为下下策。AI时代，<strong>让AI来生成<code>Skill</code>，才是正常玩法。</strong></p>
+<p>Anthropic已经开源出了<code>skill-creator</code>，它也是一个Skill，但你可以理解成<strong>Skill的Skill（元技能）</strong>，专门用来引导用户创建Skill。用这玩意，你不用再学习SKILL.md的结构，直接在CC的对话流中，用人类语言交互来创建Skill。</p>
+<p>2种方式安装<code>skill-creator</code>：</p>
+<ul>
+<li><strong>通过 plugins 安装</strong>：先添加CC的官方插件市场，然后用<code>/plugin</code>命令，在官方插件中，找到<code>skill-creator</code>的插件，直接安装并启用即可（均在对话界面交互式操作完成）。</li>
+<li><strong>直接拷贝 skill-creator</strong>：直接去Anthropic在github的官方插件仓库（https://github.com/anthropics/claude-plugins-official），找到插件中的<code>skill-creator</code>，把内层的&quot;skill-creator&quot;目录整体下载下来，再整体拷贝到项目级、或用户级的skill目录下即可。</li>
+</ul>
+<p>现在来简单演示下，如何用<code>skill-creator</code>创建一个&quot;根据某篇文章的风格，来改写另一篇文章的&quot;Skill。</p>
+<p>直接用人类语言告诉CC，你要创建一个Skill了：</p>
+<pre tabindex="0"><code>我想创建一个&#34;根据某篇文章的风格，来改写另一篇文章&#34;的Skill，请帮我创建
+</code></pre><img src="cc_5_4.png">
+<p>可以看到，CC自动加载了<code>skill-creator</code>来创建&quot;文风改写&quot;Skill，并给出了一系列引导式提问。</p>
+<p>补充了问题回答后，<code>skill-creator</code>就会帮你创建这个Skill，以下是最终生成的&quot;文风改写&quot;Skill：</p>
+<pre tabindex="0"><code>---
+name: style-rewrite
+description: 用指定文章的文风改写另一篇文章。当用户说&#34;用XXX的风格改写&#34;、&#34;模仿XX的语气&#34;、&#34;把某篇文章的风格应用到&#34;、&#34;这篇技术文档太生硬了，用更通俗的方式重写&#34;时使用此Skill。两篇文章均通过文件路径提供，先分析风格特征，再进行改写，输出到对话确认后再保存文件。
+---
+
+# Style Rewrite Skill
+
+根据指定文章的文风，改写另一篇文章。
+
+## 输入
+
+用户提供两个文件路径：
+1. **风格源文件**（style_source.md）：要模仿的风格模板
+2. **内容文件**（content.md）：需要被改写内容的原文
+
+## 工作流程
+
+### 第一步：读取文件
+
+读取两个文件的内容：
+- 风格源文件：分析其写作风格特征
+- 内容文件：需要改写的内容
+
+如果用户只提供了一个文件路径，询问另一个文件的路径。
+
+### 第二步：风格分析
+
+从以下维度分析风格源文件的特征，并在分析末尾注明字 数：
+
+**1. 句子维度**
+- 平均句长（字数）
+- 句式结构（短句为主/长句为主/长短结合）
+- 句式变化（是否频繁使用排比、问句、感叹句）
+
+**2. 词汇维度**
+- 用词风格（书面语/口语/混用）
+- 专业术语密度
+- 形容词和副词的使用频率
+- 是否使用比喻、拟人等修辞
+
+**3. 结构维度**
+- 开头方式（直接切入/背景铺垫/提问引入）
+- 段落过渡方式
+- 结尾方式（总结/升华/留白/行动号召）
+
+**4. 语气维度**
+- 正式程度（严谨/轻松/幽默）
+- 情感色彩（客观中立/主观表达/感召力）
+- 与读者的距离感（亲切/权威/平等对话）
+
+**5. 其他特征**
+- 是否有独特的个人风格标记（如特定的口头禅、常用表达）
+
+输出格式：
+
+```
+## 风格分析报告
+
+**风格源文件**：[文件名]
+**内容文件**：[文件名]
+
+### 句子维度
+- 平均句长：X字
+- 句式结构：...
+- 句式变化：...
+
+### 词汇维度
+- 用词风格：...
+- 术语密度：...
+- 修辞手法：...
+
+### 结构维度
+- 开头方式：...
+- 过渡方式：...
+- 结尾方式：...
+
+### 语气维度
+- 正式程度：...
+- 情感色彩：...
+- 读者距离：...
+
+### 其他特征
+- 特色表达：...
+
+**总字数**：XXX字
+```
+
+### 第三步：文风改写
+
+将内容文件按照风格源文件的风格进行改写。
+
+**改写原则：**
+1. **保留核心信息**：原文的核心观点、关键数据、逻辑链条必须保留
+2. **风格迁移**：尽量模仿源文件的句式、词汇、结构特征
+3. **自然流畅**：避免生硬的句式翻译，让文字读起来自然
+4. **适度调整**：如果原文某些表达在目标风格下显得突兀，可以适当调整
+
+**改写步骤：**
+1. 理解原文的核心内容和逻辑结构
+2. 按照源风格的句子维度调整句式
+3. 按照源风格的词汇偏好选择用词
+4. 应用源风格的开头、过渡、结尾方式
+5. 检查是否保留了源风格的关键特征
+
+### 第四步：输出结果
+
+将改写后的文章完整输出到对话中，格式：
+
+```
+## 文风改写结果
+
+**风格源**：[文件名]
+**原文**：[文件名]
+
+---
+
+[改写后的全文]
+
+---
+
+**改写说明**：
+- 简要说明做了哪些主要调整
+- 如果有与源风格差异较大的地方，说明原因
+```
+
+### 第五步：保存确认
+
+输出完成后，询问用户：
+
+&gt; 改写完成。是否需要保存到文件？如需保存，请提供文件名（默认：`[原内容文件名]_改写版.md`）。
+
+- 如果用户确认保存：写入文件并告知保存路径
+- 如果用户要求修改：了解需要修改的部分，进行针对性调整后重新输出
+
+## 注意事项
+
+- 如果两个文件中有重复或相关的内容，在分析时注明
+- 如果内容文件较短而风格源文件较长，重点关注风格源文件中与内容相关的部分
+- 改写时优先保证内容准确性，其次才是风格匹配度
+</code></pre><h2 id="结语">结语<a hidden class="anchor" aria-hidden="true" href="#结语">#</a></h2>
+<p><code>Skills</code>真正的给AI赋能，以前给它写&quot;脚本&quot;（Prompt），现在给它建&quot;能力库&quot;。</p>
+<p>掌握<code>Skills</code>，意味着用更高级的方式&quot;编程&quot;AI，它不再戳一下动一下，开始学会自己翻&quot;工具箱&quot;了。</p>
+<p>下一篇，将介绍<code>MCP</code>，真正的扩展了AI的能力边界。</p>
+<hr>
+<p><strong>感谢你点开这篇文章，欢迎关注我的公众号：10年码农，纯技术分享，一起在AI时代探索未来！</strong></p>
+<p><img alt="公众号" loading="lazy" src="/images/wechat.jpg"></p>
+<hr>
+<p><strong>客官您满意的话，感谢打赏。</strong></p>
+<p><img alt="打赏" loading="lazy" src="/images/pay.jpg"></p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+<nav class="paginav">
+  <a class="next" href="http://localhost:1313/posts/AI%E6%B5%AA%E6%BD%AE%E4%B8%8B%E7%9A%84%E8%81%8C%E5%9C%BA%E9%87%8D%E6%9E%84%E6%99%AE%E9%80%9A%E4%BA%BA%E5%A6%82%E4%BD%95%E5%9C%A8%E5%8F%98%E5%B1%80%E4%B8%AD%E6%89%BE%E5%88%B0%E4%BD%8D%E7%BD%AE/">
+    <span class="title">Next »</span>
+    <br>
+    <span>AI浪潮下的职场重构：普通人如何在变局中找到位置</span>
+  </a>
+</nav>
+
+
+<ul class="share-buttons">
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(五)-Skills详解 on x"
+            href="https://x.com/intent/tweet/?text=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%ba%94%29-Skills%e8%af%a6%e8%a7%a3&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25BA%2594-Skills%25E8%25AF%25A6%25E8%25A7%25A3%2f&amp;hashtags=">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M512 62.554 L 512 449.446 C 512 483.97 483.97 512 449.446 512 L 62.554 512 C 28.03 512 0 483.97 0 449.446 L 0 62.554 C 0 28.03 28.029 0 62.554 0 L 449.446 0 C 483.971 0 512 28.03 512 62.554 Z M 269.951 190.75 L 182.567 75.216 L 56 75.216 L 207.216 272.95 L 63.9 436.783 L 125.266 436.783 L 235.9 310.383 L 332.567 436.783 L 456 436.783 L 298.367 228.367 L 432.367 75.216 L 371.033 75.216 Z M 127.633 110 L 164.101 110 L 383.481 400.065 L 349.5 400.065 Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(五)-Skills详解 on linkedin"
+            href="https://www.linkedin.com/shareArticle?mini=true&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25BA%2594-Skills%25E8%25AF%25A6%25E8%25A7%25A3%2f&amp;title=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%ba%94%29-Skills%e8%af%a6%e8%a7%a3&amp;summary=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%ba%94%29-Skills%e8%af%a6%e8%a7%a3&amp;source=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25BA%2594-Skills%25E8%25AF%25A6%25E8%25A7%25A3%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(五)-Skills详解 on reddit"
+            href="https://reddit.com/submit?url=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25BA%2594-Skills%25E8%25AF%25A6%25E8%25A7%25A3%2f&title=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%ba%94%29-Skills%e8%af%a6%e8%a7%a3">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(五)-Skills详解 on facebook"
+            href="https://facebook.com/sharer/sharer.php?u=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25BA%2594-Skills%25E8%25AF%25A6%25E8%25A7%25A3%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(五)-Skills详解 on whatsapp"
+            href="https://api.whatsapp.com/send?text=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%ba%94%29-Skills%e8%af%a6%e8%a7%a3%20-%20http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25BA%2594-Skills%25E8%25AF%25A6%25E8%25A7%25A3%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(五)-Skills详解 on telegram"
+            href="https://telegram.me/share/url?text=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%ba%94%29-Skills%e8%af%a6%e8%a7%a3&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25BA%2594-Skills%25E8%25AF%25A6%25E8%25A7%25A3%2f">
+            <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(五)-Skills详解 on ycombinator"
+            href="https://news.ycombinator.com/submitlink?t=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%ba%94%29-Skills%e8%af%a6%e8%a7%a3&u=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25BA%2594-Skills%25E8%25AF%25A6%25E8%25A7%25A3%2f">
+            <svg version="1.1" xml:space="preserve" width="30px" height="30px" viewBox="0 0 512 512" fill="currentColor"
+                xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+                <path
+                    d="M449.446 0C483.971 0 512 28.03 512 62.554L512 449.446C512 483.97 483.97 512 449.446 512L62.554 512C28.03 512 0 483.97 0 449.446L0 62.554C0 28.03 28.029 0 62.554 0L449.446 0ZM183.8767 87.9921H121.8427L230.6673 292.4508V424.0079H281.3328V292.4508L390.1575 87.9921H328.1233L256 238.2489z" />
+            </svg>
+        </a>
+    </li>
+</ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://localhost:1313/">ByteZhou的个人空间</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
