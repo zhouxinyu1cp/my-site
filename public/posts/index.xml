@@ -6,8 +6,42 @@
     <description>Recent content in Posts on ByteZhou的个人空间</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 10 Apr 2026 19:37:30 +1000</lastBuildDate>
+    <lastBuildDate>Wed, 15 Apr 2026 14:43:10 +0800</lastBuildDate>
     <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>我做了一个B站up主分析工具，一键看清up账号</title>
+      <link>http://localhost:1313/posts/%E6%88%91%E5%81%9A%E4%BA%86%E4%B8%80%E4%B8%AAB%E7%AB%99up%E4%B8%BB%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7%E4%B8%80%E9%94%AE%E7%9C%8B%E6%B8%85up%E8%B4%A6%E5%8F%B7/</link>
+      <pubDate>Wed, 15 Apr 2026 14:43:10 +0800</pubDate>
+      <guid>http://localhost:1313/posts/%E6%88%91%E5%81%9A%E4%BA%86%E4%B8%80%E4%B8%AAB%E7%AB%99up%E4%B8%BB%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7%E4%B8%80%E9%94%AE%E7%9C%8B%E6%B8%85up%E8%B4%A6%E5%8F%B7/</guid>
+      <description>&lt;p&gt;最近准备去B站发视频，想对标一些热门up主，看能不能借鉴模仿，就&lt;strong&gt;做了个B站up主分析工具，一键生成该up主的分析报告，帮我在10分钟内看清一个up主的账号全景，提供一些起号建议。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;mvp版本的核心功能如下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;四维雷达图&lt;/strong&gt;: 内容力、粉丝力、影响力、商业力评分&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;关键指标卡片&lt;/strong&gt;: 粉丝数、涨粉、播放量、互动率、更新频率，商单占比&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;爆款词云&lt;/strong&gt;: 基于视频标题的关键词提取&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;趋势分析&lt;/strong&gt;: 播放量/互动率双轴趋势图，标注爆款峰值&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;内容策略拆解&lt;/strong&gt;: 时长分布、封面风格、标题特征、系列化检测&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;深度内容分析&lt;/strong&gt;: 封面色彩/构图、弹幕情感/高潮点、评论热词/情感&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;内容公式生成&lt;/strong&gt;: 基于多维度数据的内容公式、标题/封面模板&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;音视频分析&lt;/strong&gt;: 剪辑节奏、平均镜头时长、切镜频率、均值对比；语音风格、平均语速、情绪倾向、BGM 风格标签&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;流量增长分析&lt;/strong&gt;: 粉丝曲线、流量来源推断&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;商业化洞察&lt;/strong&gt;: 变现模式，商单识别、分区报价参考、变现潜力评估&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;增强起号建议&lt;/strong&gt;: 综合诊断、三维行动建议（优势/劣势/机会）、变现路径规划&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;原始数据下载&lt;/strong&gt;: 支持下载弹幕、评论原始数据、原始视频&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;PDF导出&lt;/strong&gt;: 一键生成可分享报告&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;现阶段我自己用是够了，后续可能会扩充功能，比如一个up主所有投稿的全量分析、多up主横向对比等。&lt;/p&gt;
+&lt;h1 id=&#34;分析演示&#34;&gt;分析演示&lt;/h1&gt;
+&lt;img src=&#34;b_1.png&#34;&gt;
+&lt;p&gt;我比较喜欢的一个生活区up主：&lt;code&gt;老黄游钓中国&lt;/code&gt;，分析他&lt;/p&gt;
+&lt;img src=&#34;b_2.png&#34;&gt;
+&lt;p&gt;直接输入up主的B站uid，要等一会才出报告（默认取最近50条视频，除了下载评论、弹幕，还要进行音视频分析，有点耗时）&lt;/p&gt;
+&lt;img src=&#34;b_3.png&#34;&gt;
+&lt;p&gt;上面就是B站up主&lt;code&gt;老黄游钓中国&lt;/code&gt;的完整分析报告，目前还获取不到up主的近30日的每日粉丝增量数据，另外商单信息也没有公开获取渠道（暂时只能通过评论区的关键词推算），流量增长、和商业化方面的分析有点问题，不过，up主的内容本身的分析还是没问题的，包括弹幕、评论这些。&lt;/p&gt;
+&lt;p&gt;最后，可以导出pdf：&lt;/p&gt;
+&lt;img src=&#34;b_4.png&#34;&gt;
+&lt;p&gt;嘿嘿，你们想要哪个up主的报告，我可以帮你们生成一个&lt;/p&gt;</description>
+    </item>
     <item>
       <title>玩转Claude Code(五)-Skills详解</title>
       <link>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%BA%94-Skills%E8%AF%A6%E8%A7%A3/</link>

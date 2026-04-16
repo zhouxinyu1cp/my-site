@@ -125,6 +125,29 @@
 
 <article class="post-entry"> 
   <header class="entry-header">
+    <h2 class="entry-hint-parent">基于Claude Code的SDD实战（一）：定义意图
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>大家好，我是bytezhou，今天实践SDD研发范式，直观感受一下SDD的强大威力！
+环境： macOS：14.8.4
+Claude Code：v2.1.26
+模型：MiniMax-M2.5（非广告，它的Coding Plan套餐性价比高，这儿有邀请链接https://platform.minimaxi.com/subscribe/token-plan?code=9BE5kxxIhC&amp;source=link，刚在码字时，MiniMax-M2.7发布了…）
+（另外，关于Claude Code的安装配置和基本使用，这里就不详细展开了，后面打算单独出一个Claude Code系列，给大家分享一下我的使用心得）
+需求的萌芽： 每次逛github的时候，对于一些我感兴趣的开源项目，它的Issues、PR、Discussions我都会去看，里面一些讨论挺有价值的，有时候就想能不能把它们留个档，但打开github页面一个个去复制也太傻了，此时，做个小工具的想法油然而生。
+模糊的想法： “我要做个小工具，给它一个github的URL链接，就能把对应的Issues、PR、或Discussions的内容扒下来，不用存数据库，转成一个带格式的markdown文件就行。这个小工具就做成命令行的形式吧，简单方便。”
+传统范式中，这种模糊的想法，需要产品经理和&#34;用户&#34;反复沟通、来回掰扯、深度挖掘，最终达成一致，输出一份PRD（需求文档）。
+SDD范式下，由AI作为产品经理，开发者作为&#34;用户&#34;，我们开发者和AI通过多轮的探索式对话，来进行&#34;需求澄清&#34;，把&#34;模糊的想法&#34;转化成结构化的需求规范spec.md，这就是SDD的第一步，意图定义。下面，我们进入正题。
+第一轮对话： 打开终端，创建一个目录，切进去 启动Claude Code，输入下面的Prompt，向AI提问：
+1 2 3 4 5 我现在想实现一个小工具`down_issue`。 你是一位经验丰富的产品经理，现在需要你向我提问，帮我澄清需求，最终产出一份高质量的`spec.md`。 我初步想法是:做一个命令行工具，输入一个GitHub的Issue、PR、或Discussion的URL，它就能自动把内容扒下来并将其转换为Markdown文件。 现在请开始提问。 AI作为产品经理，会向你输出一系列高质量问题： 第二轮对话： 基于第一轮对话AI提出的问题，我做出了如下回复：
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 **1. 关于输出：** - 文件默认保存在当前目录。**可选** 可通过命令行参数 -o 来指定输出目录。 - 文件名采用 {user}_{repo}_{issue_number}.md，或者 {user}_{repo}_{pr_number}.md **2. 关于内容范围：** Issue/PR/Discussion都必须包含：标题、作者、创建时间、主要内容、所有评论。 **差异处理**： - 对于PR：不用下载diff。 **必须**：保留原始URL链接。 **3. 关于认证与权限：** 默认支持公开仓库即可。 **认证方式（可选）：**仅支持通过环境变量 `GITHUB_TOKEN`传入PAT。 **4. 关于媒体处理：** - 仅保留图片的引用（URL引用）即可，无需下载图片。 **5. 关于错误处理：** - 如果Issue不存在，直接报错退出即可，错误信息打在标准输出上。 - 超时直接透传错误信息即可，不用重试。 AI思考后，会进一步帮你&#34;具象化&#34;问题，下面是它给到的回复： ...</p>
+  </div>
+  <footer class="entry-footer"><span title='2026-03-19 00:28:42 +0800 CST'>March 19, 2026</span>&nbsp;·&nbsp;<span>ByteZhou</span></footer>
+  <a class="entry-link" aria-label="post link to 基于Claude Code的SDD实战（一）：定义意图" href="http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%B8%80%E5%AE%9A%E4%B9%89%E6%84%8F%E5%9B%BE/"></a>
+</article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
     <h2 class="entry-hint-parent">AI原生时代的全新开发范式-SDD方法论详解
     </h2>
   </header>

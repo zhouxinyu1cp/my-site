@@ -125,6 +125,26 @@
 
 <article class="post-entry"> 
   <header class="entry-header">
+    <h2 class="entry-hint-parent">我做了一个B站up主分析工具，一键看清up账号
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>最近准备去B站发视频，想对标一些热门up主，看能不能借鉴模仿，就做了个B站up主分析工具，一键生成该up主的分析报告，帮我在10分钟内看清一个up主的账号全景，提供一些起号建议。
+mvp版本的核心功能如下：
+四维雷达图: 内容力、粉丝力、影响力、商业力评分 关键指标卡片: 粉丝数、涨粉、播放量、互动率、更新频率，商单占比 爆款词云: 基于视频标题的关键词提取 趋势分析: 播放量/互动率双轴趋势图，标注爆款峰值 内容策略拆解: 时长分布、封面风格、标题特征、系列化检测 深度内容分析: 封面色彩/构图、弹幕情感/高潮点、评论热词/情感 内容公式生成: 基于多维度数据的内容公式、标题/封面模板 音视频分析: 剪辑节奏、平均镜头时长、切镜频率、均值对比；语音风格、平均语速、情绪倾向、BGM 风格标签 流量增长分析: 粉丝曲线、流量来源推断 商业化洞察: 变现模式，商单识别、分区报价参考、变现潜力评估 增强起号建议: 综合诊断、三维行动建议（优势/劣势/机会）、变现路径规划 原始数据下载: 支持下载弹幕、评论原始数据、原始视频 PDF导出: 一键生成可分享报告 现阶段我自己用是够了，后续可能会扩充功能，比如一个up主所有投稿的全量分析、多up主横向对比等。
+分析演示 我比较喜欢的一个生活区up主：老黄游钓中国，分析他
+直接输入up主的B站uid，要等一会才出报告（默认取最近50条视频，除了下载评论、弹幕，还要进行音视频分析，有点耗时）
+上面就是B站up主老黄游钓中国的完整分析报告，目前还获取不到up主的近30日的每日粉丝增量数据，另外商单信息也没有公开获取渠道（暂时只能通过评论区的关键词推算），流量增长、和商业化方面的分析有点问题，不过，up主的内容本身的分析还是没问题的，包括弹幕、评论这些。
+最后，可以导出pdf：
+嘿嘿，你们想要哪个up主的报告，我可以帮你们生成一个
+</p>
+  </div>
+  <footer class="entry-footer"><span title='2026-04-15 14:43:10 +0800 CST'>April 15, 2026</span>&nbsp;·&nbsp;<span>ByteZhou</span></footer>
+  <a class="entry-link" aria-label="post link to 我做了一个B站up主分析工具，一键看清up账号" href="http://localhost:1313/posts/%E6%88%91%E5%81%9A%E4%BA%86%E4%B8%80%E4%B8%AAB%E7%AB%99up%E4%B8%BB%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7%E4%B8%80%E9%94%AE%E7%9C%8B%E6%B8%85up%E8%B4%A6%E5%8F%B7/"></a>
+</article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
     <h2 class="entry-hint-parent">玩转Claude Code(五)-Skills详解
     </h2>
   </header>
@@ -366,29 +386,6 @@ SDD范式下，“业务&#34;映射在澄清后的、结构化的需求规范spe
   </div>
   <footer class="entry-footer"><span title='2026-03-19 22:28:42 +0800 CST'>March 19, 2026</span>&nbsp;·&nbsp;<span>ByteZhou</span></footer>
   <a class="entry-link" aria-label="post link to 基于Claude Code的SDD实战（二）：技术规划" href="http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%BA%8C%E6%8A%80%E6%9C%AF%E8%A7%84%E5%88%92/"></a>
-</article>
-
-<article class="post-entry"> 
-  <header class="entry-header">
-    <h2 class="entry-hint-parent">基于Claude Code的SDD实战（一）：定义意图
-    </h2>
-  </header>
-  <div class="entry-content">
-    <p>大家好，我是bytezhou，今天实践SDD研发范式，直观感受一下SDD的强大威力！
-环境： macOS：14.8.4
-Claude Code：v2.1.26
-模型：MiniMax-M2.5（非广告，它的Coding Plan套餐性价比高，这儿有邀请链接https://platform.minimaxi.com/subscribe/token-plan?code=9BE5kxxIhC&amp;source=link，刚在码字时，MiniMax-M2.7发布了…）
-（另外，关于Claude Code的安装配置和基本使用，这里就不详细展开了，后面打算单独出一个Claude Code系列，给大家分享一下我的使用心得）
-需求的萌芽： 每次逛github的时候，对于一些我感兴趣的开源项目，它的Issues、PR、Discussions我都会去看，里面一些讨论挺有价值的，有时候就想能不能把它们留个档，但打开github页面一个个去复制也太傻了，此时，做个小工具的想法油然而生。
-模糊的想法： “我要做个小工具，给它一个github的URL链接，就能把对应的Issues、PR、或Discussions的内容扒下来，不用存数据库，转成一个带格式的markdown文件就行。这个小工具就做成命令行的形式吧，简单方便。”
-传统范式中，这种模糊的想法，需要产品经理和&#34;用户&#34;反复沟通、来回掰扯、深度挖掘，最终达成一致，输出一份PRD（需求文档）。
-SDD范式下，由AI作为产品经理，开发者作为&#34;用户&#34;，我们开发者和AI通过多轮的探索式对话，来进行&#34;需求澄清&#34;，把&#34;模糊的想法&#34;转化成结构化的需求规范spec.md，这就是SDD的第一步，意图定义。下面，我们进入正题。
-第一轮对话： 打开终端，创建一个目录，切进去 启动Claude Code，输入下面的Prompt，向AI提问：
-1 2 3 4 5 我现在想实现一个小工具`down_issue`。 你是一位经验丰富的产品经理，现在需要你向我提问，帮我澄清需求，最终产出一份高质量的`spec.md`。 我初步想法是:做一个命令行工具，输入一个GitHub的Issue、PR、或Discussion的URL，它就能自动把内容扒下来并将其转换为Markdown文件。 现在请开始提问。 AI作为产品经理，会向你输出一系列高质量问题： 第二轮对话： 基于第一轮对话AI提出的问题，我做出了如下回复：
-1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 **1. 关于输出：** - 文件默认保存在当前目录。**可选** 可通过命令行参数 -o 来指定输出目录。 - 文件名采用 {user}_{repo}_{issue_number}.md，或者 {user}_{repo}_{pr_number}.md **2. 关于内容范围：** Issue/PR/Discussion都必须包含：标题、作者、创建时间、主要内容、所有评论。 **差异处理**： - 对于PR：不用下载diff。 **必须**：保留原始URL链接。 **3. 关于认证与权限：** 默认支持公开仓库即可。 **认证方式（可选）：**仅支持通过环境变量 `GITHUB_TOKEN`传入PAT。 **4. 关于媒体处理：** - 仅保留图片的引用（URL引用）即可，无需下载图片。 **5. 关于错误处理：** - 如果Issue不存在，直接报错退出即可，错误信息打在标准输出上。 - 超时直接透传错误信息即可，不用重试。 AI思考后，会进一步帮你&#34;具象化&#34;问题，下面是它给到的回复： ...</p>
-  </div>
-  <footer class="entry-footer"><span title='2026-03-19 00:28:42 +0800 CST'>March 19, 2026</span>&nbsp;·&nbsp;<span>ByteZhou</span></footer>
-  <a class="entry-link" aria-label="post link to 基于Claude Code的SDD实战（一）：定义意图" href="http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%B8%80%E5%AE%9A%E4%B9%89%E6%84%8F%E5%9B%BE/"></a>
 </article>
 <footer class="page-footer">
   <nav class="pagination">
