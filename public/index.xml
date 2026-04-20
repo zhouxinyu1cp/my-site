@@ -6,8 +6,80 @@
     <description>Recent content on ByteZhou的个人空间</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 15 Apr 2026 14:43:10 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 19 Apr 2026 23:03:30 +1000</lastBuildDate>
     <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>小白也能玩转Claude Code(六):MCP详解(1)</title>
+      <link>http://localhost:1313/posts/%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%8E%A9%E8%BD%ACClaude-Code%E5%85%ADMCP%E8%AF%A6%E8%A7%A31/</link>
+      <pubDate>Sun, 19 Apr 2026 23:03:30 +1000</pubDate>
+      <guid>http://localhost:1313/posts/%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%8E%A9%E8%BD%ACClaude-Code%E5%85%ADMCP%E8%AF%A6%E8%A7%A31/</guid>
+      <description>&lt;p&gt;大家好，我是bytezhou，玩转Claude Code系列已经来到第六篇了，本篇我们将解锁AI能力扩展的秘密武器：&lt;strong&gt;MCP（Model Context Protocol），模型上下文协议&lt;/strong&gt;。&lt;/p&gt;
+&lt;h1 id=&#34;为什么需要mcp&#34;&gt;为什么需要MCP？&lt;/h1&gt;
+&lt;p&gt;Claude Code作为Coding Agent来说，已经非常强大了，可以读写文件、执行Shell命令等，但它的能力边界，也就仅限于它的内置工具集，那问题来了：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;想让CC写完代码后自动在GitLab上提个MR，咋整？&lt;/li&gt;
+&lt;li&gt;想让CC自己去深度查找不同第三方组件的最新文档，咋弄？&lt;/li&gt;
+&lt;li&gt;想让CC自己去连接数据库并操作相关的表，咋办？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这些任务，CC的内置工具根本撑不住，它们需要AI具备一种全新的能力与外部世界通信和交互，这，就是今天要介绍的&lt;strong&gt;MCP&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;总的来说，&lt;strong&gt;MCP是一套专门为AI Agent设计的通信协议&lt;/strong&gt;，它定义了一套标准的&amp;quot;语言&amp;quot;，让AI可以与外部世界进行结构化通信。可以简单理解为，&lt;strong&gt;MCP是AI与外部世界的一个&amp;quot;适配器&amp;quot;&lt;/strong&gt;。&lt;/p&gt;
+&lt;h1 id=&#34;mcp原理&#34;&gt;MCP原理&lt;/h1&gt;
+&lt;p&gt;先介绍一下MCP工作原理。MCP中有3个关键的角色定义：&lt;strong&gt;Client（客户端）、Server（服务器）、Host（主机）&lt;/strong&gt;，它本质上是&lt;code&gt;Client-Server&lt;/code&gt;模型，但增加了一个&amp;quot;Host&amp;quot;角色。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Host（主机）：&amp;ldquo;总指挥&amp;rdquo;&lt;/strong&gt;，用户直接使用的Agent应用，这儿的话，Host就是Claude Code本身，它主要负责：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;直面用户，处理用户请求。&lt;/li&gt;
+&lt;li&gt;管理不同的Client实例。&lt;/li&gt;
+&lt;li&gt;作为云端LLM与所有Client之间的&amp;quot;总指挥&amp;quot;，分发任务。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Server（服务器）：&amp;ldquo;能力提供方&amp;rdquo;&lt;/strong&gt;，独立的第三方服务，可以是本地的一个进程，也可以是远端服务。GitHub MCP Server、Playwright MCP Server等，都是服务器。&lt;/p&gt;
+&lt;p&gt;作为&amp;quot;能力提供方&amp;quot;，Server最重要的职责是向Host暴露自己的能力，&lt;strong&gt;即Tools（工具），也就是AI可以直接调用、执行的动作&lt;/strong&gt;，比如 GitHub MCP的&lt;code&gt;list_issues&lt;/code&gt;就是一个工具。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Client（客户端）：&amp;ldquo;连接器&amp;rdquo;&lt;/strong&gt;，Host内部管理的实例，专门处理与对应Server的通信和交互，用户无感。&lt;/p&gt;
+&lt;p&gt;每一个MCP Server，在Host内都有一个专门的Client与其对应。该Client与Server建立1v1的连接、会话，处理底层协议、消息分发等，如下：&lt;/p&gt;
+&lt;img src=&#34;cc_6_1.png&#34;&gt;
+&lt;p&gt;搞懂了这3个角色，咱们重新理一下**&amp;ldquo;Claude Code与MCP Server交互的过程&amp;rdquo;**：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Claude Code收到云端大模型的&amp;quot;Tool Call&amp;quot;调用请求后，通过内部管理的特定Client，将该请求封装成一个遵循MCP协议的请求，发给对应的Server。Server执行完成后，将结果返给Client，再由Claude Code把结果展现给用户、或者发给云端大模型进一步处理。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;img src=&#34;cc_6_2.png&#34;&gt;
+&lt;p&gt;上述流程就是CC与MCP Server交互的完整示例，可以看到：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;**服务发现：**CC启动时，就会根据配置去连接MCP Server，MCP Server会主动向CC上报自己的&amp;quot;能力&amp;quot;，告诉它自己有哪些工具（Tool List）可以使用。&lt;/li&gt;
+&lt;li&gt;**职责分离：**云端大模型只负责思考和发出&amp;quot;指令&amp;quot;，根据可用Tool List，发出&amp;quot;调用工具&amp;quot;的指令。Claude Code及内部管理的Client，负责将“调用工具”的指令封装成标准MCP协议的请求。MCP Server则响应对应的&amp;quot;Tool Call&amp;quot;，执行相关的工具逻辑。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;配置mcp服务器&#34;&gt;配置MCP服务器&lt;/h1&gt;
+&lt;p&gt;CC里配置MCP Server，有几种方式：一是直接通过&lt;code&gt;claude mcp add&lt;/code&gt;命令手动添加，二是把别人配置好的mcp json直接拷贝到我们的配置文件里，三是直接通过插件市场安装对应的plugin即可。&lt;/p&gt;
+&lt;p&gt;咱们先介绍下&lt;code&gt;claude mcp add&lt;/code&gt;命令，其中一个关键参数是&lt;code&gt;--transport&lt;/code&gt;，即传输协议，主要有2种：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;--transport http&lt;/code&gt;：连接&lt;strong&gt;远程、通过HTTP交互&lt;/strong&gt;的 MCP Server。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--transport stdio&lt;/code&gt;：连接&lt;strong&gt;本地、通过 stdin/stdout（标准输入输出）进行交互&lt;/strong&gt;的 MCP Server。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;另一个重要参数是&lt;code&gt;--scope&lt;/code&gt;，决定了该MCP配置的作用域，主要也是2种：&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;参数配置&lt;/th&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;作用域&lt;/th&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;存放位置&lt;/th&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;使用场景&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;&amp;ndash;scope user&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;User（用户级）&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;~/.claude.json&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;个人私有的mcp配置，不上传git，不共享，对本地的所有项目生效&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;&amp;ndash;scope project&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;Project（项目级）&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;项目根目录/.mcp.json&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;团队公共的mcp配置，上传git，团队共享，仅对当前项目生效&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;这里MCP配置的&amp;quot;作用域&amp;quot;，和前几篇介绍的&lt;code&gt;CLAUDE.md&lt;/code&gt;、&lt;code&gt;Slash Command&lt;/code&gt;、&lt;code&gt;Skills&lt;/code&gt;的&lt;strong&gt;作用域&lt;/strong&gt;的概念和设计，是一脉相承的。&lt;/p&gt;</description>
+    </item>
     <item>
       <title>我做了一个B站up主分析工具，一键看清up账号</title>
       <link>http://localhost:1313/posts/%E6%88%91%E5%81%9A%E4%BA%86%E4%B8%80%E4%B8%AAB%E7%AB%99up%E4%B8%BB%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7%E4%B8%80%E9%94%AE%E7%9C%8B%E6%B8%85up%E8%B4%A6%E5%8F%B7/</link>

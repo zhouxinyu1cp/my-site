@@ -125,6 +125,26 @@
 
 <article class="post-entry"> 
   <header class="entry-header">
+    <h2 class="entry-hint-parent">基于Claude Code的SDD实战（二）：技术规划
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>大家好，我是bytezhou，上一篇给大家实践了SDD第一步-定义意图，接下来进入SDD第二步：技术规划。
+传统范式下，产品经理输出PRD后，架构师拿着这份PRD进行技术选型（用Java还是Go）、架构设计（整体流程、分层设计）、模块划分（微服务拆分、数据建模）、API设计（前后端交互接口等）等，产出项目概要设计、详细设计文档等。
+SDD范式下，“业务&#34;映射在澄清后的、结构化的需求规范spec.md中，AI作为&#34;架构师”，我们开发者则作为&#34;工作流设计者&#34;，指挥引导&#34;AI架构师&#34;把高层级的spec.md，“编译&#34;成一份详尽的、结构化的技术规划方案 plan.md。废话不多说，我们进入正题。
+切回项目目录，打开Claude Code（关闭plan mode），我们先来根据spec.md，指定技术栈，生成项目结构，同时让AI生成一份API声明（不一定严格遵守），作为后续输入（指导它思考）。输入以下Prompt：
+1 2 3 4 5 @specs/spec.md 你是一名资深的Go语言架构师，请严格参考Go语言最佳实践（特别注意包内聚原则），根据`spec.md`，规划并创建整体的项目目录结构。 生成目录后，请在项目根目录下创建`api.md`文件，描述一下各个包对外暴露的主要接口（Interface/Function签名），作为后续开发的指导。 AI会迅速执行以上操作，按照Go最佳实践来生成项目结构，下面是它的执行过程：
+可以看到，AI不仅创建了项目目录、生成了api.md，还进行了go mod初始化和makefile的生成，一气呵成。
+以下是生成的 api.md：
+# API 文档 本文档描述 `down_issue` 项目各包对外暴露的主要接口，作为后续开发的指导。 --- ## 1. `internal/parser` - URL 解析 ### 职责 解析 GitHub URL，提取 owner、repo、number 及类型信息。 ### 接口签名 ```go // ItemType 表示 GitHub 内容的类型 type ItemType int const ( TypeIssue ItemType = iota TypePullRequest TypeDiscussion ) // ParseResult 解析结果 type ParseResult struct { Type ItemType // 类型：Issue、PR、Discussion Owner string // 仓库所有者 Repo string // 仓库名 Number int // 编号 } // Parse(url string) (*ParseResult, error) // 解析 GitHub URL，返回解析结果 // 支持格式： // - https://github.com/{owner}/{repo}/issues/{number} // - https://github.com/{owner}/{repo}/pull/{number} // - https://github.com/{owner}/{repo}/discussions/{number} // 错误：URL 格式不正确时返回错误 ``` --- ## 2. `internal/github` - GitHub API 客户端 ### 职责 封装 GitHub REST API 调用，获取 Issue、PR、Discussion 及其评论。 ### 接口签名 ```go // Issue 表示 GitHub Issue 数据结构 type Issue struct { Number int Title string Body string Author string CreatedAt time.Time URL string Comments []Comment } // PullRequest 表示 GitHub Pull Request 数据结构 type PullRequest struct { Number int Title string Body string Author string CreatedAt time.Time URL string Comments []Comment } // Discussion 表示 GitHub Discussion 数据结构 type Discussion struct { Number int Title string Body string Author string CreatedAt time.Time URL string Comments []Comment } // Comment 表示评论/回复 type Comment struct { Body string Author string CreatedAt time.Time } // Client GitHub API 客户端接口 type Client interface { // FetchIssue 获取 Issue 及其评论 FetchIssue(owner, repo string, number int) (*Issue, error) // FetchPullRequest 获取 PR 及其评论 FetchPullRequest(owner, repo string, number int) (*PullRequest, error) // FetchDiscussion 获取 Discussion 及其评论 FetchDiscussion(owner, repo string, number int) (*Discussion, error) } // NewClient(token string) Client // 创建 GitHub API 客户端 // token: 可选的 GITHUB_TOKEN，用于私有仓库或提高 API 速率限制 ``` --- ## 3. `internal/fetcher` - 数据获取逻辑 ### 职责 组合 parser 和 github 包，提供高层的数据获取接口。 ### 接口签名 ```go // Content 统一的内容接口 type Content interface { GetTitle() string GetBody() string GetAuthor() string GetCreatedAt() time.Time GetURL() string GetComments() []github.Comment } // Fetch(url string, client github.Client) (Content, error) // 根据 URL 自动识别类型，获取对应内容 // 返回 Content 接口，支持 Issue、PR、Discussion 的统一处理 ``` --- ## 4. `internal/markdown` - Markdown 生成 ### 职责 将获取的内容转换为格式化的 Markdown 文件。 ### 接口签名 ```go // GenerateIssue(issue *github.Issue) string // 将 Issue 转换为 Markdown 格式字符串 // GeneratePullRequest(pr *github.PullRequest) string // 将 PullRequest 转换为 Markdown 格式字符串 // GenerateDiscussion(discussion *github.Discussion) string // 将 Discussion 转换为 Markdown 格式字符串 // Generate(content github.Content) string // 统一生成接口，根据 content 类型自动选择对应生成函数 ``` ### 输出文件名格式 ```go // GetFilename(itemType parser.ItemType, owner, repo string, number int) string // 返回格式： // - Issue: {owner}_{repo}_issue_{number}.md // - PullRequest: {owner}_{repo}_pr_{number}.md // - Discussion: {owner}_{repo}_discussion_{number}.md ``` --- ## 5. `cmd/down_issue` - CLI 入口 ### 职责 命令行接口，协调各模块完成下载任务。 ### main.go 逻辑 ```go // 用法： // down_issue &lt;url&gt; # 下载到当前目录 // down_issue &lt;url&gt; -o &lt;path&gt; # 下载到指定目录 // 主要流程： // 1. 解析命令行参数（url, -o output-dir） // 2. 调用 parser.Parse() 解析 URL // 3. 创建 github.Client（可选使用 GITHUB_TOKEN） // 4. 调用 fetcher.Fetch() 获取内容 // 5. 调用 markdown.Generate() 生成 Markdown // 6. 调用 markdown.GetFilename() 获取文件名 // 7. 写入文件到指定目录 ``` --- ## 模块依赖关系 ``` cmd/down_issue/main.go │ ├── parser.Parse() │ └── 返回 ItemType, Owner, Repo, Number │ ├── github.NewClient(token) │ └── 返回 github.Client 接口 │ ├── fetcher.Fetch(url, client) │ ├── 调用 parser.Parse() │ ├── 调用 github.Client.Fetch*() │ └── 返回 Content 接口 │ └── markdown.Generate(content) └── markdown.GetFilename() ``` --- ## 错误处理约定 - 所有错误使用 `fmt.Errorf(&#34;包名: 描述: %w&#34;, err)` 包装 - 网络错误、解析错误、API 错误直接透传 - 不存在的资源返回标准 error，由 main.go 输出到 stderr 并以非零状态码退出 这是一份非常详尽的api文档，包含了各模块的职责描述、核心数据结构定义、主要接口声明、模块间的依赖关系等，项目已经初具&#34;骨架”。
+...</p>
+  </div>
+  <footer class="entry-footer"><span title='2026-03-19 22:28:42 +0800 CST'>March 19, 2026</span>&nbsp;·&nbsp;<span>ByteZhou</span></footer>
+  <a class="entry-link" aria-label="post link to 基于Claude Code的SDD实战（二）：技术规划" href="http://localhost:1313/posts/%E5%9F%BA%E4%BA%8EClaude-Code%E7%9A%84SDD%E5%AE%9E%E6%88%98%E4%BA%8C%E6%8A%80%E6%9C%AF%E8%A7%84%E5%88%92/"></a>
+</article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
     <h2 class="entry-hint-parent">基于Claude Code的SDD实战（一）：定义意图
     </h2>
   </header>
