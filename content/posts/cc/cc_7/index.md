@@ -1,6 +1,6 @@
 +++
 date = '2026-04-22T18:05:00+10:00'
-title = '小白也能玩转Claude Code(七)-写个微信公众号的MCP Server'
+title = '玩转Claude Code(七)-写个微信公众号的MCP Server'
 +++
 
 大家好，我是bytezhou，本篇我们将自己动手写一个操纵微信公众号的MCP Server，该Server部署在本地，通过`--transport stdio`的方式暴露给Claude Code。通过该MCP Server，可以在CC中直接用人类语言操作我们的公众号，非常强大。不废话，下面直接进入主题。

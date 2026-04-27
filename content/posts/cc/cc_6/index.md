@@ -1,6 +1,6 @@
 +++
 date = '2026-04-19T23:03:30+10:00'
-title = '小白也能玩转Claude Code(六):MCP详解(1)'
+title = '玩转Claude Code(六):MCP详解(1)'
 +++
 
 大家好，我是bytezhou，玩转Claude Code系列已经来到第六篇了，本篇我们将解锁AI能力扩展的秘密武器：**MCP（Model Context Protocol），模型上下文协议**。

@@ -9,10 +9,10 @@
     <lastBuildDate>Wed, 22 Apr 2026 18:05:00 +1000</lastBuildDate>
     <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>小白也能玩转Claude Code(七)-写个微信公众号的MCP Server</title>
-      <link>http://localhost:1313/posts/%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%83-%E5%86%99%E4%B8%AA%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7%E7%9A%84MCP-Server/</link>
+      <title>玩转Claude Code(七)-写个微信公众号的MCP Server</title>
+      <link>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%83-%E5%86%99%E4%B8%AA%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7%E7%9A%84MCP-Server/</link>
       <pubDate>Wed, 22 Apr 2026 18:05:00 +1000</pubDate>
-      <guid>http://localhost:1313/posts/%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%83-%E5%86%99%E4%B8%AA%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7%E7%9A%84MCP-Server/</guid>
+      <guid>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%83-%E5%86%99%E4%B8%AA%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7%E7%9A%84MCP-Server/</guid>
       <description>&lt;p&gt;大家好，我是bytezhou，本篇我们将自己动手写一个操纵微信公众号的MCP Server，该Server部署在本地，通过&lt;code&gt;--transport stdio&lt;/code&gt;的方式暴露给Claude Code。通过该MCP Server，可以在CC中直接用人类语言操作我们的公众号，非常强大。不废话，下面直接进入主题。&lt;/p&gt;
 &lt;h1 id=&#34;1环境&#34;&gt;1.环境&lt;/h1&gt;
 &lt;p&gt;本次开发采用Java技术栈，所有的&lt;code&gt;需规、设计、实现、测试、bug修复、部署&lt;/code&gt;均由 Claude Code 100%完成，我仅进行流程编排与审核，整体环境如下：&lt;/p&gt;
@@ -69,10 +69,10 @@
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;主要的项目配置如下：&lt;/p&gt;</description>
     </item>
     <item>
-      <title>小白也能玩转Claude Code(六):MCP详解(1)</title>
-      <link>http://localhost:1313/posts/%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%8E%A9%E8%BD%ACClaude-Code%E5%85%ADMCP%E8%AF%A6%E8%A7%A31/</link>
+      <title>玩转Claude Code(六):MCP详解(1)</title>
+      <link>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E5%85%ADMCP%E8%AF%A6%E8%A7%A31/</link>
       <pubDate>Sun, 19 Apr 2026 23:03:30 +1000</pubDate>
-      <guid>http://localhost:1313/posts/%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%8E%A9%E8%BD%ACClaude-Code%E5%85%ADMCP%E8%AF%A6%E8%A7%A31/</guid>
+      <guid>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E5%85%ADMCP%E8%AF%A6%E8%A7%A31/</guid>
       <description>&lt;p&gt;大家好，我是bytezhou，玩转Claude Code系列已经来到第六篇了，本篇我们将解锁AI能力扩展的秘密武器：&lt;strong&gt;MCP（Model Context Protocol），模型上下文协议&lt;/strong&gt;。&lt;/p&gt;
 &lt;h1 id=&#34;为什么需要mcp&#34;&gt;为什么需要MCP？&lt;/h1&gt;
 &lt;p&gt;Claude Code作为Coding Agent来说，已经非常强大了，可以读写文件、执行Shell命令等，但它的能力边界，也就仅限于它的内置工具集，那问题来了：&lt;/p&gt;
