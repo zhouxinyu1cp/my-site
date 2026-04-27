@@ -6,8 +6,68 @@
     <description>Recent content in Posts on ByteZhou的个人空间</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 19 Apr 2026 23:03:30 +1000</lastBuildDate>
+    <lastBuildDate>Wed, 22 Apr 2026 18:05:00 +1000</lastBuildDate>
     <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>小白也能玩转Claude Code(七)-写个微信公众号的MCP Server</title>
+      <link>http://localhost:1313/posts/%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%83-%E5%86%99%E4%B8%AA%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7%E7%9A%84MCP-Server/</link>
+      <pubDate>Wed, 22 Apr 2026 18:05:00 +1000</pubDate>
+      <guid>http://localhost:1313/posts/%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%83-%E5%86%99%E4%B8%AA%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7%E7%9A%84MCP-Server/</guid>
+      <description>&lt;p&gt;大家好，我是bytezhou，本篇我们将自己动手写一个操纵微信公众号的MCP Server，该Server部署在本地，通过&lt;code&gt;--transport stdio&lt;/code&gt;的方式暴露给Claude Code。通过该MCP Server，可以在CC中直接用人类语言操作我们的公众号，非常强大。不废话，下面直接进入主题。&lt;/p&gt;
+&lt;h1 id=&#34;1环境&#34;&gt;1.环境&lt;/h1&gt;
+&lt;p&gt;本次开发采用Java技术栈，所有的&lt;code&gt;需规、设计、实现、测试、bug修复、部署&lt;/code&gt;均由 Claude Code 100%完成，我仅进行流程编排与审核，整体环境如下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;everything-claude-code插件: 1.10.0（https://github.com/affaan-m/everything-claude-code）&lt;/li&gt;
+&lt;li&gt;JDK: 17&lt;/li&gt;
+&lt;li&gt;Spring AI: 1.1.4&lt;/li&gt;
+&lt;li&gt;Spring Boot: 3.4.4&lt;/li&gt;
+&lt;li&gt;weixin-java-mp: 4.8.0 (&lt;a href=&#34;https://github.com/binarywang/WxJava&#34;&gt;https://github.com/binarywang/WxJava&lt;/a&gt;，很出名的微信开发 Java SDK)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;上述组件说明如下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;everything-claude-code插件确实是CC的一个神器，但过于&amp;quot;全&amp;quot;、反而有些&amp;quot;臃肿&amp;quot;，根据个人情况，可能要去掉一些Hook、或MCP配置（都可以让CC代劳）。&lt;/li&gt;
+&lt;li&gt;Spring AI是Spring专门为AI应用开发封装的一套SDK（https://spring.io/projects/spring-ai），主流的功能都支持，比如向量数据库、MCP集成、RAG等。（所有的文档查阅、使用方法检索这些，都可以让CC代劳）&lt;/li&gt;
+&lt;li&gt;weixin-java-mp是进行微信公众号开发的一个SDK，高star项目，目前最新的稳定版本是4.8.0，封装了几乎所有的公众号开放API。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;最后，大致的结构如下：&lt;/p&gt;
+&lt;img src=&#34;cc_77_cover.png&#34;&gt;
+&lt;h1 id=&#34;2架构配置核心代码&#34;&gt;2.架构、配置、核心代码&lt;/h1&gt;
+&lt;h2 id=&#34;项目依赖与配置&#34;&gt;项目依赖与配置&lt;/h2&gt;
+&lt;p&gt;首先，你可以直接让CC创建一个Spring AI的标准demo项目，然后去掉文本生成（即聊天）相关的依赖，&lt;code&gt;集成MCP Server开发的依赖（stdio方式），添加weixin-java-mp组件（4.8.0）的依赖，&lt;/code&gt;再调整项目配置和代码，最终的pom文件的主要依赖如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    &amp;lt;dependencyManagement&amp;gt;
+        &amp;lt;dependencies&amp;gt;
+            &amp;lt;dependency&amp;gt;
+                &amp;lt;groupId&amp;gt;org.springframework.ai&amp;lt;/groupId&amp;gt;
+                &amp;lt;artifactId&amp;gt;spring-ai-bom&amp;lt;/artifactId&amp;gt;
+                &amp;lt;version&amp;gt;1.1.4&amp;lt;/version&amp;gt;
+                &amp;lt;type&amp;gt;pom&amp;lt;/type&amp;gt;
+                &amp;lt;scope&amp;gt;import&amp;lt;/scope&amp;gt;
+            &amp;lt;/dependency&amp;gt;
+        &amp;lt;/dependencies&amp;gt;
+    &amp;lt;/dependencyManagement&amp;gt;
+
+    &amp;lt;dependencies&amp;gt;
+        &amp;lt;!-- Spring AI - MCP Server --&amp;gt;
+        &amp;lt;dependency&amp;gt;
+            &amp;lt;groupId&amp;gt;org.springframework.ai&amp;lt;/groupId&amp;gt;
+            &amp;lt;artifactId&amp;gt;spring-ai-starter-mcp-server&amp;lt;/artifactId&amp;gt;
+        &amp;lt;/dependency&amp;gt;
+
+        &amp;lt;dependency&amp;gt;
+            &amp;lt;groupId&amp;gt;com.github.binarywang&amp;lt;/groupId&amp;gt;
+            &amp;lt;artifactId&amp;gt;weixin-java-mp&amp;lt;/artifactId&amp;gt;
+            &amp;lt;version&amp;gt;4.8.0&amp;lt;/version&amp;gt;
+        &amp;lt;/dependency&amp;gt;
+
+        &amp;lt;!-- Test --&amp;gt;
+        &amp;lt;dependency&amp;gt;
+            &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;
+            &amp;lt;artifactId&amp;gt;spring-boot-starter-test&amp;lt;/artifactId&amp;gt;
+            &amp;lt;scope&amp;gt;test&amp;lt;/scope&amp;gt;
+        &amp;lt;/dependency&amp;gt;
+    &amp;lt;/dependencies&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;主要的项目配置如下：&lt;/p&gt;</description>
+    </item>
     <item>
       <title>小白也能玩转Claude Code(六):MCP详解(1)</title>
       <link>http://localhost:1313/posts/%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%8E%A9%E8%BD%ACClaude-Code%E5%85%ADMCP%E8%AF%A6%E8%A7%A31/</link>

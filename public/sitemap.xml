@@ -3,10 +3,13 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>http://localhost:1313/</loc>
-    <lastmod>2026-04-19T23:03:30+10:00</lastmod>
+    <lastmod>2026-04-22T18:05:00+10:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/posts/</loc>
-    <lastmod>2026-04-19T23:03:30+10:00</lastmod>
+    <lastmod>2026-04-22T18:05:00+10:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/posts/%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%83-%E5%86%99%E4%B8%AA%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7%E7%9A%84MCP-Server/</loc>
+    <lastmod>2026-04-22T18:05:00+10:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/posts/%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%8E%A9%E8%BD%ACClaude-Code%E5%85%ADMCP%E8%AF%A6%E8%A7%A31/</loc>
     <lastmod>2026-04-19T23:03:30+10:00</lastmod>
