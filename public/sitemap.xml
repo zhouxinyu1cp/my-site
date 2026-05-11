@@ -3,10 +3,16 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>http://localhost:1313/</loc>
-    <lastmod>2026-04-22T18:05:00+10:00</lastmod>
+    <lastmod>2026-05-10T16:58:00+10:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/posts/</loc>
-    <lastmod>2026-04-22T18:05:00+10:00</lastmod>
+    <lastmod>2026-05-10T16:58:00+10:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B9%9D-Hooks%E8%AF%A6%E8%A7%A3/</loc>
+    <lastmod>2026-05-10T16:58:00+10:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E5%85%AB-SubAgent%E8%AF%A6%E8%A7%A3/</loc>
+    <lastmod>2026-05-01T22:37:00+10:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%83-%E5%86%99%E4%B8%AA%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7%E7%9A%84MCP-Server/</loc>
     <lastmod>2026-04-22T18:05:00+10:00</lastmod>

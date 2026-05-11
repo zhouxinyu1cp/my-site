@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="light">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>玩转Claude Code(九)-Hooks详解 | ByteZhou的个人空间</title>
+<meta name="keywords" content="">
+<meta name="description" content="大家好，我是bytezhou，本篇介绍Claude Code的Hooks，一种&quot;事件触发&quot;机制。
+流行的开发框架都有&quot;生命周期回调&quot;，Claude Code的Hooks机制，也是一种基于生命周期的回调机制。简单来说，我们在CC会话的生命周期的一些节点处，预先埋下&quot;钩子&quot;，等CC的会话执行到那个节点时，就会自动触发&quot;钩子&quot;的操作，这就是Hooks。
+1.&ldquo;人驱动&quot;与&quot;事件驱动&rdquo;
+我们把Hooks和前面介绍的Slash Commands简单对比一下：
+
+
+Slash Commands：&ldquo;人驱动&rdquo;，用户主动发指令。
+Hooks：&ldquo;事件驱动&rdquo;，就像CC会话中埋下的&quot;传感器&quot;，一旦生命周期事件发生了，&ldquo;传感器&quot;上的动作就会被触发。
+
+2.Claude Code生命周期中的Hook事件
+Claude Code生命周期的主要节点示例如下（每个节点均可配置相应的Hook事件回调）：
+
+
+启动CC → SessionStart → 用户输入Prompt → UserPromptSubmit →
+CC调用工具 → PreToolUse → 工具执行，返回结果 →
+PostToolUse  → 主回合结束 → Stop → 退出CC → SessionEnd
+
+常用的Hook事件如下：
+
+  
+      
+          事件
+          触发时机
+          使用场景
+      
+  
+  
+      
+          SessionStart
+          会话启动时
+          执行一些初始化动作，加载特定&quot;记忆&quot;等
+      
+      
+          UserPromptSubmit
+          用户输入Prompt、CC还没执行时
+          可以对用户输入做一些安全校验、过滤等
+      
+      
+          PreToolUse
+          CC调用工具前，准备执行但还未执行
+          可以获取传给工具的参数，做一些个性化操作，甚至拦截某次工具调用
+      
+      
+          PostToolUse
+          工具执行后
+          可以获取工具执行结果，做一些扫尾动作
+      
+      
+          Stop
+          主会话中的一轮对话结束时
+          进行&quot;总结式&quot;动作，记日志、存储结论性的结果等
+      
+      
+          SessionEnd
+          会话结束时
+          一些清理工作，或者保存当前状态等
+      
+  
+
+2.1 Hooks的配置格式
+跟前面介绍的Slash Commands、Skills类似，Hooks的配置也分为项目级、用户级：
+
+项目级Hooks配置：位于 项目根目录/.claude/settings.json 文件中
+用户级Hooks配置：位于 ~/.claude/settings.json 文件中
+
+具体的格式如下：">
+<meta name="author" content="ByteZhou">
+<link rel="canonical" href="http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B9%9D-Hooks%E8%AF%A6%E8%A7%A3/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.b2fb3e76a8c11c585aa2c220e844461da3987fd48a6ceb221ea5c631333c5751.css" integrity="sha256-svs&#43;dqjBHFhaosIg6ERGHaOYf9SKbOsiHqXGMTM8V1E=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B9%9D-Hooks%E8%AF%A6%E8%A7%A3/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    }
+
+</script><meta property="og:url" content="http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B9%9D-Hooks%E8%AF%A6%E8%A7%A3/">
+  <meta property="og:site_name" content="ByteZhou的个人空间">
+  <meta property="og:title" content="玩转Claude Code(九)-Hooks详解">
+  <meta property="og:description" content="大家好，我是bytezhou，本篇介绍Claude Code的Hooks，一种&#34;事件触发&#34;机制。
+流行的开发框架都有&#34;生命周期回调&#34;，Claude Code的Hooks机制，也是一种基于生命周期的回调机制。简单来说，我们在CC会话的生命周期的一些节点处，预先埋下&#34;钩子&#34;，等CC的会话执行到那个节点时，就会自动触发&#34;钩子&#34;的操作，这就是Hooks。
+1.“人驱动&#34;与&#34;事件驱动” 我们把Hooks和前面介绍的Slash Commands简单对比一下：
+Slash Commands：“人驱动”，用户主动发指令。 Hooks：“事件驱动”，就像CC会话中埋下的&#34;传感器&#34;，一旦生命周期事件发生了，“传感器&#34;上的动作就会被触发。 2.Claude Code生命周期中的Hook事件 Claude Code生命周期的主要节点示例如下（每个节点均可配置相应的Hook事件回调）：
+启动CC → SessionStart → 用户输入Prompt → UserPromptSubmit → CC调用工具 → PreToolUse → 工具执行，返回结果 → PostToolUse → 主回合结束 → Stop → 退出CC → SessionEnd
+常用的Hook事件如下：
+事件 触发时机 使用场景 SessionStart 会话启动时 执行一些初始化动作，加载特定&#34;记忆&#34;等 UserPromptSubmit 用户输入Prompt、CC还没执行时 可以对用户输入做一些安全校验、过滤等 PreToolUse CC调用工具前，准备执行但还未执行 可以获取传给工具的参数，做一些个性化操作，甚至拦截某次工具调用 PostToolUse 工具执行后 可以获取工具执行结果，做一些扫尾动作 Stop 主会话中的一轮对话结束时 进行&#34;总结式&#34;动作，记日志、存储结论性的结果等 SessionEnd 会话结束时 一些清理工作，或者保存当前状态等 2.1 Hooks的配置格式 跟前面介绍的Slash Commands、Skills类似，Hooks的配置也分为项目级、用户级：
+项目级Hooks配置：位于 项目根目录/.claude/settings.json 文件中 用户级Hooks配置：位于 ~/.claude/settings.json 文件中 具体的格式如下：">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2026-05-10T16:58:00+10:00">
+    <meta property="article:modified_time" content="2026-05-10T16:58:00+10:00">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="玩转Claude Code(九)-Hooks详解">
+  <meta name="twitter:description" content="大家好，我是bytezhou，本篇介绍Claude Code的Hooks，一种&#34;事件触发&#34;机制。
+流行的开发框架都有&#34;生命周期回调&#34;，Claude Code的Hooks机制，也是一种基于生命周期的回调机制。简单来说，我们在CC会话的生命周期的一些节点处，预先埋下&#34;钩子&#34;，等CC的会话执行到那个节点时，就会自动触发&#34;钩子&#34;的操作，这就是Hooks。
+1.“人驱动&#34;与&#34;事件驱动” 我们把Hooks和前面介绍的Slash Commands简单对比一下：
+Slash Commands：“人驱动”，用户主动发指令。 Hooks：“事件驱动”，就像CC会话中埋下的&#34;传感器&#34;，一旦生命周期事件发生了，“传感器&#34;上的动作就会被触发。 2.Claude Code生命周期中的Hook事件 Claude Code生命周期的主要节点示例如下（每个节点均可配置相应的Hook事件回调）：
+启动CC → SessionStart → 用户输入Prompt → UserPromptSubmit → CC调用工具 → PreToolUse → 工具执行，返回结果 → PostToolUse → 主回合结束 → Stop → 退出CC → SessionEnd
+常用的Hook事件如下：
+事件 触发时机 使用场景 SessionStart 会话启动时 执行一些初始化动作，加载特定&#34;记忆&#34;等 UserPromptSubmit 用户输入Prompt、CC还没执行时 可以对用户输入做一些安全校验、过滤等 PreToolUse CC调用工具前，准备执行但还未执行 可以获取传给工具的参数，做一些个性化操作，甚至拦截某次工具调用 PostToolUse 工具执行后 可以获取工具执行结果，做一些扫尾动作 Stop 主会话中的一轮对话结束时 进行&#34;总结式&#34;动作，记日志、存储结论性的结果等 SessionEnd 会话结束时 一些清理工作，或者保存当前状态等 2.1 Hooks的配置格式 跟前面介绍的Slash Commands、Skills类似，Hooks的配置也分为项目级、用户级：
+项目级Hooks配置：位于 项目根目录/.claude/settings.json 文件中 用户级Hooks配置：位于 ~/.claude/settings.json 文件中 具体的格式如下：">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "http://localhost:1313/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "玩转Claude Code(九)-Hooks详解",
+      "item": "http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B9%9D-Hooks%E8%AF%A6%E8%A7%A3/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "玩转Claude Code(九)-Hooks详解",
+  "name": "玩转Claude Code(九)-Hooks详解",
+  "description": "大家好，我是bytezhou，本篇介绍Claude Code的Hooks，一种\u0026quot;事件触发\u0026quot;机制。\n流行的开发框架都有\u0026quot;生命周期回调\u0026quot;，Claude Code的Hooks机制，也是一种基于生命周期的回调机制。简单来说，我们在CC会话的生命周期的一些节点处，预先埋下\u0026quot;钩子\u0026quot;，等CC的会话执行到那个节点时，就会自动触发\u0026quot;钩子\u0026quot;的操作，这就是Hooks。\n1.\u0026ldquo;人驱动\u0026quot;与\u0026quot;事件驱动\u0026rdquo; 我们把Hooks和前面介绍的Slash Commands简单对比一下：\nSlash Commands：\u0026ldquo;人驱动\u0026rdquo;，用户主动发指令。 Hooks：\u0026ldquo;事件驱动\u0026rdquo;，就像CC会话中埋下的\u0026quot;传感器\u0026quot;，一旦生命周期事件发生了，\u0026ldquo;传感器\u0026quot;上的动作就会被触发。 2.Claude Code生命周期中的Hook事件 Claude Code生命周期的主要节点示例如下（每个节点均可配置相应的Hook事件回调）：\n启动CC → SessionStart → 用户输入Prompt → UserPromptSubmit → CC调用工具 → PreToolUse → 工具执行，返回结果 → PostToolUse → 主回合结束 → Stop → 退出CC → SessionEnd\n常用的Hook事件如下：\n事件 触发时机 使用场景 SessionStart 会话启动时 执行一些初始化动作，加载特定\u0026quot;记忆\u0026quot;等 UserPromptSubmit 用户输入Prompt、CC还没执行时 可以对用户输入做一些安全校验、过滤等 PreToolUse CC调用工具前，准备执行但还未执行 可以获取传给工具的参数，做一些个性化操作，甚至拦截某次工具调用 PostToolUse 工具执行后 可以获取工具执行结果，做一些扫尾动作 Stop 主会话中的一轮对话结束时 进行\u0026quot;总结式\u0026quot;动作，记日志、存储结论性的结果等 SessionEnd 会话结束时 一些清理工作，或者保存当前状态等 2.1 Hooks的配置格式 跟前面介绍的Slash Commands、Skills类似，Hooks的配置也分为项目级、用户级：\n项目级Hooks配置：位于 项目根目录/.claude/settings.json 文件中 用户级Hooks配置：位于 ~/.claude/settings.json 文件中 具体的格式如下：\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "大家好，我是bytezhou，本篇介绍Claude Code的Hooks，一种\"事件触发\"机制。\n流行的开发框架都有\"生命周期回调\"，Claude Code的Hooks机制，也是一种基于生命周期的回调机制。简单来说，我们在CC会话的生命周期的一些节点处，预先埋下\"钩子\"，等CC的会话执行到那个节点时，就会自动触发\"钩子\"的操作，这就是Hooks。\n1.“人驱动\"与\"事件驱动” 我们把Hooks和前面介绍的Slash Commands简单对比一下：\nSlash Commands：“人驱动”，用户主动发指令。 Hooks：“事件驱动”，就像CC会话中埋下的\"传感器\"，一旦生命周期事件发生了，“传感器\"上的动作就会被触发。 2.Claude Code生命周期中的Hook事件 Claude Code生命周期的主要节点示例如下（每个节点均可配置相应的Hook事件回调）：\n启动CC → SessionStart → 用户输入Prompt → UserPromptSubmit → CC调用工具 → PreToolUse → 工具执行，返回结果 → PostToolUse → 主回合结束 → Stop → 退出CC → SessionEnd\n常用的Hook事件如下：\n事件 触发时机 使用场景 SessionStart 会话启动时 执行一些初始化动作，加载特定\"记忆\"等 UserPromptSubmit 用户输入Prompt、CC还没执行时 可以对用户输入做一些安全校验、过滤等 PreToolUse CC调用工具前，准备执行但还未执行 可以获取传给工具的参数，做一些个性化操作，甚至拦截某次工具调用 PostToolUse 工具执行后 可以获取工具执行结果，做一些扫尾动作 Stop 主会话中的一轮对话结束时 进行\"总结式\"动作，记日志、存储结论性的结果等 SessionEnd 会话结束时 一些清理工作，或者保存当前状态等 2.1 Hooks的配置格式 跟前面介绍的Slash Commands、Skills类似，Hooks的配置也分为项目级、用户级：\n项目级Hooks配置：位于 项目根目录/.claude/settings.json 文件中 用户级Hooks配置：位于 ~/.claude/settings.json 文件中 具体的格式如下：\n{ \"hooks\": { \"{Event}\": [ // Hook事件名字，如 PreToolUse { \"matcher\": \"{工具匹配模式}\", // 要匹配哪些工具、或MCP方法，如 Edit \"hooks\": [ { \"type\": \"command|prompt\", \"command\": \"python3 count.py\", // type=command，事件触发时，要执行的具体Shell命令 \"prompt\": \"发给LLM的提示词\", // type=prompt，事件触发时，要发给LLM的prompt \"timeout\": 30 // 超时时间（秒） } ] } ] } } {Event}：事件名字，如 PreToolUse、PostToolUse等。\nmatcher：指定匹配模式，一般PreToolUse、PostToolUse这2个事件会指定特有的工具匹配，进行精细化的工具调用管控。\n\"\"或\"*\"：匹配所有工具。 Read：只能匹配\"Read\"工具。 Write|Edit：匹配这2个工具中的一个即可。 Bash(git:push:*)：只能匹配 git push及其子命令。 mcp__github__.*：匹配所有github mcp server的工具。 type：一般用command，事件触发时，执行命令。\ncommand：要执行的具体Shell命令，Hook回调的核心。\n这里举个例子（来自everything-claude-code）：\n{ \"hooks\": { \"PreToolUse\": [ { \"matcher\": \"Write\", \"hooks\": [ { \"type\": \"command\", \"command\": \"node -e \\\"let d='';process.stdin.on('data',c=\u003ed+=c);process.stdin.on('end',()=\u003e{const i=JSON.parse(d);const c=i.tool_input?.content||'';const lines=c.split('\\\\n').length;if(lines\u003e800){console.error('[Hook] BLOCKED: File exceeds 800 lines ('+lines+' lines)');console.error('[Hook] Split into smaller, focused modules');process.exit(2)}console.log(d)})\\\"\" } ], \"description\": \"Block creation of files larger than 800 lines\" } ] } } 这个Hook的作用是，在调用Write工具创建文件前，获取文件内容、并判断文件行数是否大于800，若该文件超过了800行，就拦截掉，不让调用Write工具创建文件。\n2.2 向Hook命令传参 Claude Code通过stdin向Hook命令传参，以json形式，传递当前事件的上下文信息，包括事件名、当前工作目录等，通用字段如下：\n{ \"session_id\": \"abc123\", \"transcript_path\": \"/path/to/transcript.txt\", \"cwd\": \"/current/working/dir\", \"permission_mode\": \"ask|allow\", \"hook_event_name\": \"PreToolUse\" } 不同的事件，有额外的附加字段，我们主要关注 PreToolUse、PostToolUse 事件（最常用）：\n{ \"session_id\": \"abc123\", \"transcript_path\": \"/path/to/transcript.txt\", \"cwd\": \"/current/working/dir\", \"permission_mode\": \"ask|allow\", \"hook_event_name\": \"PreToolUse\", \"tool_name\": \"Write\", // 工具名字，如 Edit、Bash等 \"tool_input\": { // 工具的入参 \"command\": \"命令字符串\", // Bash工具：执行的命令 \"content\": \"文件内容\", // Write工具：文件内容 \"file_path\": \"文件路径\", // Edit/Write/Read工具：操作的目标文件路径 \"old_string\": \"旧内容\", // Edit工具：被替换的旧内容 \"new_string\": \"新内容\" // Edit工具：用来编辑的新内容 }, \"tool_response\": { // PostToolUse事件 独有字段 \"type\": \"create\", \"filePath\": \"文件路径\", // Edit等编辑工具 \"content\": \"文件内容\", \"stdout\": \"命令执行结果的输出\", // Bash工具 \"stderr\": \"命令执行错误的输出\" // Bash工具 } } 我们可以添加一个项目级的PostToolUse的Hook事件，把CC传过来的原始参数打印到文件里看一下，Hook配置如下：\n{ \"hooks\": { \"PostToolUse\": [ { \"matcher\": \"Write|Edit\", \"hooks\": [ { \"type\": \"command\", \"command\": \"echo $(cat) \u003e\u003e log.txt\" } ] } ] } } 调用Write工具触发PostToolUse后，该Hook打印出来的原始入参如下：\n{ \"session_id\": \"07514e36-2bd1-43a7-9bed-d2d10e703d18\", \"transcript_path\": \"/Users/zhouxinyu/.claude/projects/-Users-zhouxinyu-ai-project-AI---------/07514e36-2bd1-43a7-9bed-d2d10e703d18.jsonl\", \"cwd\": \"/Users/zhouxinyu/ai-project/AI\", \"permission_mode\": \"default\", \"hook_event_name\": \"PostToolUse\", \"tool_name\": \"Write\", \"tool_input\": { \"file_path\": \"/Users/zhouxinyu/ai-project/AI/test2.txt\", \"content\": \"this is another test line\" }, \"tool_response\": { \"type\": \"create\", \"filePath\": \"/Users/zhouxinyu/ai-project/AI/test2.txt\", \"content\": \"this is another test line\", \"structuredPatch\": [], \"originalFile\": null }, \"tool_use_id\": \"call_function_3isgijspbxp0_1\" } 2.3 Hook命令的输出结果 Hook命令通过exit code（退出码）控制Hook回调后的行为：\n退出码 说明 0 允许CC继续操作，通过stdout把输出结果传递给CC 2 阻止CC继续操作，通过stderr把错误信息反馈给CC 1 不阻止CC，但把错误信息显示给用户 简单点讲，0-放行，2-拦截。\n举个例子，这有一个拦截危险命令的PreToolUse事件的Hook脚本：\n#!/bin/bash input=$(cat) command=$(echo \"$input\" | jq -r '.tool_input.command') # 检查危险命令 if [[ \"$command\" == *\"rm -rf\"* ]]; then echo \"Error: Dangerous command blocked\" exit 2 # 阻止执行，拦截工具调用 fi exit 0 # 允许执行，CC继续进行工具调用 exit 0 // 允许执行，继续进行工具调用\nexit 2 // 阻止执行，拦截工具调用，通过stderr传递错误信息\n3.Hook配置示例 3.1 自定义一个操作日志记录的Hook 接下来进行完整的Hook配置演示，自定义一个项目级的PostToolUse的Hook，用python脚本实现简单的操作日志记录。\n在当前项目的目录下面，创建python脚本，路径为$CLAUDE_PROJECT_DIR/.claude/hooks/log.py，其中，$CLAUDE_PROJECT_DIR环境变量，在Hook命令执行时，Claude Code会自动注入，python脚本内容如下：\n#!/usr/bin/env python3 \"\"\" PostToolUse Hook - 日志记录器 exit 0: 记录成功 exit 1: 记录失败（不阻止 Claude） exit 2: 记录失败（阻止工具调用） \"\"\" import json import sys from datetime import datetime from pathlib import Path LOG_FILE = Path(\"~/.claude/hook_logs/tool_use.log\").expanduser() def log_event(tool_name: str, tool_input: dict, success: bool, error: str = None): \"\"\"写入日志\"\"\" timestamp = datetime.now().isoformat() log_entry = { \"timestamp\": timestamp, \"tool\": tool_name, \"input\": tool_input, \"success\": success, } if error: log_entry[\"error\"] = error LOG_FILE.parent.mkdir(parents=True, exist_ok=True) with open(LOG_FILE, \"a\") as f: f.write(json.dumps(log_entry, ensure_ascii=False) + \"\\n\") def main(): try: input_data = json.load(sys.stdin) except json.JSONDecodeError: print(\"Error: Invalid JSON input\", file=sys.stderr) sys.exit(1) tool_name = input_data.get(\"tool_name\", \"\") tool_input = input_data.get(\"tool_input\", {}) # 过滤敏感字段 safe_input = {} sensitive_keys = {\"password\", \"token\", \"secret\", \"key\", \"credential\"} for k, v in tool_input.items(): if k.lower() in sensitive_keys: safe_input[k] = \"[REDACTED]\" else: safe_input[k] = v log_event(tool_name, safe_input, success=True) print(f\"Logged: {tool_name}\", file=sys.stderr) sys.exit(0) if __name__ == \"__main__\": main() 给log.py脚本加上\"可执行\"权限：\nchmod +x ./.claude/hooks/log.py 下面，启动CC，进入CC的会话界面，利用交互式命令/hooks来创建该Hook，选择PostToolUse：\n选择 “Add new matcher”：\n要匹配的工具，主要记录\"写操作\"相关的工具，Write|Edit|Delete|Bash：\n再选择\"Add new hook”：\n这里配置Hook要执行的命令：\n最后，选择项目级配置即可：\n我们看一下配好后的./.claude/settings.json中的内容：\n下面，我们来测试一下，在CC中调用\"Write|Edit|Delete|Bash\"工具做一些操作：\n操作完成后，我们看一下脚本记录的日志文件~/.claude/hook_logs/tool_use.log：\n可以看到，相关的操作都通过该Hook脚本成功的写到日志文件了。\n3.2 debug Hook 我们可以打开Claude Code的debug模式，看一看更详细的Hook执行日志。下面是以debug模式启动CC的命令：\nclaude --debug\n打开debug后，可以看到debug文件路径：\n然后，另外开一个终端，tail -f debug文件的实时输出：\n再次触发一下Hook，看看debug文件的输出：\n可以清晰看到，Hook被触发执行、响应结果等，通过这种方式，来调试Hook。\n4.结语 本篇详细介绍了Claude Code生命周期中的主要Hook事件、如何配置Hook、Hook的输入输出，最后，演示了如何自定义一个Hook以及如何debug Hook。\n下一篇会介绍Claude Code的权限体系。\n写到这儿，已经是Claude Code系列的第9篇文章了，大概还有2~3篇就结束了。自认为对Claude Code的拆解和介绍，还是比较系统全面的，会坚持写完的。\n感谢你点开这篇文章，欢迎关注我的公众号：10年码农，纯技术分享，一起在AI时代探索未来！\n客官您满意的话，感谢打赏。\n",
+  "wordCount" : "566",
+  "inLanguage": "en",
+  "datePublished": "2026-05-10T16:58:00+10:00",
+  "dateModified": "2026-05-10T16:58:00+10:00",
+  "author":{
+    "@type": "Person",
+    "name": "ByteZhou"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B9%9D-Hooks%E8%AF%A6%E8%A7%A3/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ByteZhou的个人空间",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://localhost:1313/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="ByteZhou的个人空间 (Alt + H)">ByteZhou的个人空间</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:1313/posts/" title="文章">
+                    <span>文章</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/categories/" title="分类">
+                    <span>分类</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/tags/" title="标签">
+                    <span>标签</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:1313/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:1313/posts/">Posts</a></div>
+    <h1 class="post-title entry-hint-parent">
+      玩转Claude Code(九)-Hooks详解
+    </h1>
+    <div class="post-meta"><span title='2026-05-10 16:58:00 +1000 +1000'>May 10, 2026</span>&nbsp;·&nbsp;<span>ByteZhou</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>大家好，我是bytezhou，本篇介绍Claude Code的<code>Hooks</code>，一种&quot;事件触发&quot;机制。</p>
+<p>流行的开发框架都有&quot;生命周期回调&quot;，Claude Code的<code>Hooks机制</code>，也是一种<strong>基于生命周期的回调机制</strong>。简单来说，我们在CC会话的生命周期的一些节点处，预先埋下&quot;钩子&quot;，等CC的会话执行到那个节点时，就会自动触发&quot;钩子&quot;的操作，这就是<code>Hooks</code>。</p>
+<h1 id="1人驱动与事件驱动">1.&ldquo;人驱动&quot;与&quot;事件驱动&rdquo;<a hidden class="anchor" aria-hidden="true" href="#1人驱动与事件驱动">#</a></h1>
+<p>我们把<code>Hooks</code>和前面介绍的<code>Slash Commands</code>简单对比一下：</p>
+<img src="cc_9_1.png">
+<ul>
+<li>Slash Commands：&ldquo;人驱动&rdquo;，用户主动发指令。</li>
+<li>Hooks：&ldquo;事件驱动&rdquo;，就像CC会话中埋下的&quot;传感器&quot;，一旦生命周期事件发生了，&ldquo;传感器&quot;上的动作就会被触发。</li>
+</ul>
+<h1 id="2claude-code生命周期中的hook事件">2.Claude Code生命周期中的Hook事件<a hidden class="anchor" aria-hidden="true" href="#2claude-code生命周期中的hook事件">#</a></h1>
+<p>Claude Code生命周期的主要节点示例如下（每个节点均可配置相应的Hook事件回调）：</p>
+<img src="cc_9_2.png">
+<blockquote>
+<p>启动CC → SessionStart → 用户输入Prompt → UserPromptSubmit →
+CC调用工具 → PreToolUse → 工具执行，返回结果 →
+PostToolUse  → 主回合结束 → Stop → 退出CC → SessionEnd</p>
+</blockquote>
+<p>常用的Hook事件如下：</p>
+<table>
+  <thead>
+      <tr>
+          <th style="text-align: center">事件</th>
+          <th style="text-align: center">触发时机</th>
+          <th style="text-align: center">使用场景</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: center">SessionStart</td>
+          <td style="text-align: center">会话启动时</td>
+          <td style="text-align: center">执行一些初始化动作，加载特定&quot;记忆&quot;等</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">UserPromptSubmit</td>
+          <td style="text-align: center">用户输入Prompt、CC还没执行时</td>
+          <td style="text-align: center">可以对用户输入做一些安全校验、过滤等</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">PreToolUse</td>
+          <td style="text-align: center">CC调用工具前，<strong>准备执行但还未执行</strong></td>
+          <td style="text-align: center">可以获取传给工具的参数，做一些个性化操作，甚至拦截某次工具调用</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">PostToolUse</td>
+          <td style="text-align: center">工具执行后</td>
+          <td style="text-align: center">可以获取工具执行结果，做一些扫尾动作</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">Stop</td>
+          <td style="text-align: center">主会话中的一轮对话结束时</td>
+          <td style="text-align: center">进行&quot;总结式&quot;动作，记日志、存储结论性的结果等</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">SessionEnd</td>
+          <td style="text-align: center">会话结束时</td>
+          <td style="text-align: center">一些清理工作，或者保存当前状态等</td>
+      </tr>
+  </tbody>
+</table>
+<h2 id="21-hooks的配置格式">2.1 Hooks的配置格式<a hidden class="anchor" aria-hidden="true" href="#21-hooks的配置格式">#</a></h2>
+<p>跟前面介绍的<code>Slash Commands</code>、<code>Skills</code>类似，<code>Hooks</code>的配置也分为项目级、用户级：</p>
+<ul>
+<li>项目级Hooks配置：位于 <code>项目根目录/.claude/settings.json</code> 文件中</li>
+<li>用户级Hooks配置：位于 <code>~/.claude/settings.json</code> 文件中</li>
+</ul>
+<p>具体的格式如下：</p>
+<pre tabindex="0"><code>{
+  &#34;hooks&#34;: {
+    &#34;{Event}&#34;: [  // Hook事件名字，如 PreToolUse
+      {
+        &#34;matcher&#34;: &#34;{工具匹配模式}&#34;,  // 要匹配哪些工具、或MCP方法，如 Edit
+        &#34;hooks&#34;: [
+          {
+            &#34;type&#34;: &#34;command|prompt&#34;,
+            &#34;command&#34;: &#34;python3 count.py&#34;,  // type=command，事件触发时，要执行的具体Shell命令
+            &#34;prompt&#34;: &#34;发给LLM的提示词&#34;,  // type=prompt，事件触发时，要发给LLM的prompt
+            &#34;timeout&#34;: 30  // 超时时间（秒）
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre><ul>
+<li>
+<p>{Event}：事件名字，如 PreToolUse、PostToolUse等。</p>
+</li>
+<li>
+<p>matcher：指定匹配模式，一般<code>PreToolUse</code>、<code>PostToolUse</code>这2个事件会指定特有的工具匹配，进行精细化的工具调用管控。</p>
+<ul>
+<li><code>&quot;&quot;</code>或<code>&quot;*&quot;</code>：匹配所有工具。
+<ul>
+<li><code>Read</code>：只能匹配&quot;Read&quot;工具。</li>
+<li><code>Write|Edit</code>：匹配这2个工具中的一个即可。</li>
+<li><code>Bash(git:push:*)</code>：只能匹配 <code>git push</code>及其子命令。</li>
+<li><code>mcp__github__.*</code>：匹配所有github mcp server的工具。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>type：一般用<code>command</code>，事件触发时，执行命令。</p>
+</li>
+<li>
+<p>command：要执行的具体Shell命令，Hook回调的核心。</p>
+</li>
+</ul>
+<p>这里举个例子（来自<strong>everything-claude-code</strong>）：</p>
+<pre tabindex="0"><code>{
+  &#34;hooks&#34;: {
+    &#34;PreToolUse&#34;: [
+      {
+        &#34;matcher&#34;: &#34;Write&#34;,
+        &#34;hooks&#34;: [
+          {
+            &#34;type&#34;: &#34;command&#34;,
+            &#34;command&#34;: &#34;node -e \&#34;let d=&#39;&#39;;process.stdin.on(&#39;data&#39;,c=&gt;d+=c);process.stdin.on(&#39;end&#39;,()=&gt;{const i=JSON.parse(d);const c=i.tool_input?.content||&#39;&#39;;const lines=c.split(&#39;\\n&#39;).length;if(lines&gt;800){console.error(&#39;[Hook] BLOCKED: File exceeds 800 lines (&#39;+lines+&#39; lines)&#39;);console.error(&#39;[Hook] Split into smaller, focused modules&#39;);process.exit(2)}console.log(d)})\&#34;&#34;
+          }
+        ],
+        &#34;description&#34;: &#34;Block creation of files larger than 800 lines&#34;
+      }
+    ]
+  }
+}
+</code></pre><p>这个Hook的作用是，在调用Write工具创建文件前，获取文件内容、并判断文件行数是否大于800，若该文件超过了800行，就拦截掉，不让调用Write工具创建文件。</p>
+<h2 id="22-向hook命令传参">2.2 向Hook命令传参<a hidden class="anchor" aria-hidden="true" href="#22-向hook命令传参">#</a></h2>
+<p>Claude Code通过<code>stdin</code>向Hook命令传参，以json形式，传递当前事件的上下文信息，包括事件名、当前工作目录等，通用字段如下：</p>
+<pre tabindex="0"><code>{
+    &#34;session_id&#34;: &#34;abc123&#34;,
+    &#34;transcript_path&#34;: &#34;/path/to/transcript.txt&#34;,
+    &#34;cwd&#34;: &#34;/current/working/dir&#34;,
+    &#34;permission_mode&#34;: &#34;ask|allow&#34;,
+    &#34;hook_event_name&#34;: &#34;PreToolUse&#34;
+}
+</code></pre><p>不同的事件，有额外的附加字段，我们主要关注 <code>PreToolUse</code>、<code>PostToolUse</code> 事件（最常用）：</p>
+<pre tabindex="0"><code>{
+    &#34;session_id&#34;: &#34;abc123&#34;,
+    &#34;transcript_path&#34;: &#34;/path/to/transcript.txt&#34;,
+    &#34;cwd&#34;: &#34;/current/working/dir&#34;,
+    &#34;permission_mode&#34;: &#34;ask|allow&#34;,
+    &#34;hook_event_name&#34;: &#34;PreToolUse&#34;,
+    &#34;tool_name&#34;: &#34;Write&#34;,  // 工具名字，如 Edit、Bash等
+    &#34;tool_input&#34;: {  // 工具的入参
+       &#34;command&#34;: &#34;命令字符串&#34;,  // Bash工具：执行的命令
+       &#34;content&#34;: &#34;文件内容&#34;,  // Write工具：文件内容
+       &#34;file_path&#34;: &#34;文件路径&#34;,  // Edit/Write/Read工具：操作的目标文件路径
+       &#34;old_string&#34;: &#34;旧内容&#34;,  // Edit工具：被替换的旧内容
+       &#34;new_string&#34;: &#34;新内容&#34;  // Edit工具：用来编辑的新内容
+    },
+    &#34;tool_response&#34;: {  // PostToolUse事件 独有字段
+		&#34;type&#34;: &#34;create&#34;,
+		&#34;filePath&#34;: &#34;文件路径&#34;,  // Edit等编辑工具
+		&#34;content&#34;: &#34;文件内容&#34;,  
+		&#34;stdout&#34;: &#34;命令执行结果的输出&#34;,  // Bash工具
+		&#34;stderr&#34;: &#34;命令执行错误的输出&#34;  // Bash工具
+    }
+}
+</code></pre><p>我们可以添加一个项目级的<code>PostToolUse</code>的Hook事件，把CC传过来的原始参数打印到文件里看一下，Hook配置如下：</p>
+<pre tabindex="0"><code>{
+  &#34;hooks&#34;: {
+    &#34;PostToolUse&#34;: [
+      {
+        &#34;matcher&#34;: &#34;Write|Edit&#34;,
+        &#34;hooks&#34;: [
+          {
+            &#34;type&#34;: &#34;command&#34;,
+            &#34;command&#34;: &#34;echo $(cat) &gt;&gt; log.txt&#34;
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre><p>调用Write工具触发<code>PostToolUse</code>后，该Hook打印出来的原始入参如下：</p>
+<pre tabindex="0"><code>{
+	&#34;session_id&#34;: &#34;07514e36-2bd1-43a7-9bed-d2d10e703d18&#34;,
+	&#34;transcript_path&#34;: &#34;/Users/zhouxinyu/.claude/projects/-Users-zhouxinyu-ai-project-AI---------/07514e36-2bd1-43a7-9bed-d2d10e703d18.jsonl&#34;,
+	&#34;cwd&#34;: &#34;/Users/zhouxinyu/ai-project/AI&#34;,
+	&#34;permission_mode&#34;: &#34;default&#34;,
+	&#34;hook_event_name&#34;: &#34;PostToolUse&#34;,
+	&#34;tool_name&#34;: &#34;Write&#34;,
+	&#34;tool_input&#34;: {
+		&#34;file_path&#34;: &#34;/Users/zhouxinyu/ai-project/AI/test2.txt&#34;,
+		&#34;content&#34;: &#34;this is another test line&#34;
+	},
+	&#34;tool_response&#34;: {
+		&#34;type&#34;: &#34;create&#34;,
+		&#34;filePath&#34;: &#34;/Users/zhouxinyu/ai-project/AI/test2.txt&#34;,
+		&#34;content&#34;: &#34;this is another test line&#34;,
+		&#34;structuredPatch&#34;: [],
+		&#34;originalFile&#34;: null
+	},
+	&#34;tool_use_id&#34;: &#34;call_function_3isgijspbxp0_1&#34;
+}
+</code></pre><h2 id="23-hook命令的输出结果">2.3 Hook命令的输出结果<a hidden class="anchor" aria-hidden="true" href="#23-hook命令的输出结果">#</a></h2>
+<p>Hook命令通过exit code（退出码）控制Hook回调后的行为：</p>
+<table>
+  <thead>
+      <tr>
+          <th style="text-align: center">退出码</th>
+          <th style="text-align: center">说明</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: center">0</td>
+          <td style="text-align: center">允许CC继续操作，通过<code>stdout</code>把输出结果传递给CC</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">2</td>
+          <td style="text-align: center">阻止CC继续操作，通过<code>stderr</code>把错误信息反馈给CC</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">1</td>
+          <td style="text-align: center">不阻止CC，但把错误信息显示给用户</td>
+      </tr>
+  </tbody>
+</table>
+<p>简单点讲，<code>0</code>-放行，<code>2</code>-拦截。</p>
+<p>举个例子，这有一个拦截危险命令的<code>PreToolUse</code>事件的Hook脚本：</p>
+<pre tabindex="0"><code>#!/bin/bash
+input=$(cat)
+command=$(echo &#34;$input&#34; | jq -r &#39;.tool_input.command&#39;)
+
+# 检查危险命令
+if [[ &#34;$command&#34; == *&#34;rm -rf&#34;* ]]; then
+    echo &#34;Error: Dangerous command blocked&#34;
+    exit 2  # 阻止执行，拦截工具调用
+fi
+
+exit 0  # 允许执行，CC继续进行工具调用
+</code></pre><blockquote>
+<p>exit 0  // 允许执行，继续进行工具调用</p>
+<p>exit 2  // 阻止执行，拦截工具调用，通过<code>stderr</code>传递错误信息</p>
+</blockquote>
+<h1 id="3hook配置示例">3.Hook配置示例<a hidden class="anchor" aria-hidden="true" href="#3hook配置示例">#</a></h1>
+<h2 id="31-自定义一个操作日志记录的hook">3.1 自定义一个操作日志记录的Hook<a hidden class="anchor" aria-hidden="true" href="#31-自定义一个操作日志记录的hook">#</a></h2>
+<p>接下来进行完整的Hook配置演示，自定义一个项目级的<code>PostToolUse</code>的Hook，用python脚本实现简单的操作日志记录。</p>
+<p>在当前项目的目录下面，创建python脚本，路径为<code>$CLAUDE_PROJECT_DIR/.claude/hooks/log.py</code>，其中，<code>$CLAUDE_PROJECT_DIR</code>环境变量，在Hook命令执行时，Claude Code会自动注入，python脚本内容如下：</p>
+<pre tabindex="0"><code>#!/usr/bin/env python3
+&#34;&#34;&#34;
+PostToolUse Hook - 日志记录器
+exit 0: 记录成功
+exit 1: 记录失败（不阻止 Claude）
+exit 2: 记录失败（阻止工具调用）
+&#34;&#34;&#34;
+
+import json
+import sys
+from datetime import datetime
+from pathlib import Path
+
+LOG_FILE = Path(&#34;~/.claude/hook_logs/tool_use.log&#34;).expanduser()
+
+
+def log_event(tool_name: str, tool_input: dict, success: bool, error: str = None):
+    &#34;&#34;&#34;写入日志&#34;&#34;&#34;
+    timestamp = datetime.now().isoformat()
+    log_entry = {
+        &#34;timestamp&#34;: timestamp,
+        &#34;tool&#34;: tool_name,
+        &#34;input&#34;: tool_input,
+        &#34;success&#34;: success,
+    }
+    if error:
+        log_entry[&#34;error&#34;] = error
+
+    LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(LOG_FILE, &#34;a&#34;) as f:
+        f.write(json.dumps(log_entry, ensure_ascii=False) + &#34;\n&#34;)
+
+
+def main():
+    try:
+        input_data = json.load(sys.stdin)
+    except json.JSONDecodeError:
+        print(&#34;Error: Invalid JSON input&#34;, file=sys.stderr)
+        sys.exit(1)
+
+    tool_name = input_data.get(&#34;tool_name&#34;, &#34;&#34;)
+    tool_input = input_data.get(&#34;tool_input&#34;, {})
+
+    # 过滤敏感字段
+    safe_input = {}
+    sensitive_keys = {&#34;password&#34;, &#34;token&#34;, &#34;secret&#34;, &#34;key&#34;, &#34;credential&#34;}
+    for k, v in tool_input.items():
+        if k.lower() in sensitive_keys:
+            safe_input[k] = &#34;[REDACTED]&#34;
+        else:
+            safe_input[k] = v
+
+    log_event(tool_name, safe_input, success=True)
+    print(f&#34;Logged: {tool_name}&#34;, file=sys.stderr)
+    sys.exit(0)
+
+
+if __name__ == &#34;__main__&#34;:
+    main()
+</code></pre><p>给<code>log.py</code>脚本加上&quot;可执行&quot;权限：</p>
+<pre tabindex="0"><code>chmod +x ./.claude/hooks/log.py
+</code></pre><p>下面，启动CC，进入CC的会话界面，利用交互式命令<code>/hooks</code>来创建该Hook，选择<code>PostToolUse</code>：</p>
+<img src="cc_9_3.png">
+<p>选择 &ldquo;Add new matcher&rdquo;：</p>
+<img src="cc_9_4.png">
+<p>要匹配的工具，主要记录&quot;写操作&quot;相关的工具，<strong>Write|Edit|Delete|Bash</strong>：</p>
+<img src="cc_9_5.png">
+<p>再选择&quot;Add new hook&rdquo;：</p>
+<img src="cc_9_6.png">
+<p>这里配置Hook要执行的命令：</p>
+<img src="cc_9_7.png">
+<p>最后，选择项目级配置即可：</p>
+<img src="cc_9_8.png">
+<p>我们看一下配好后的<code>./.claude/settings.json</code>中的内容：</p>
+<img src="cc_9_9.png">
+<p>下面，我们来测试一下，在CC中调用&quot;Write|Edit|Delete|Bash&quot;工具做一些操作：</p>
+<img src="cc_9_10.png">
+<img src="cc_9_11.png">
+<p>操作完成后，我们看一下脚本记录的日志文件<code>~/.claude/hook_logs/tool_use.log</code>：</p>
+<img src="cc_9_12.png">
+<p>可以看到，相关的操作都通过该Hook脚本成功的写到日志文件了。</p>
+<h2 id="32-debug-hook">3.2 debug Hook<a hidden class="anchor" aria-hidden="true" href="#32-debug-hook">#</a></h2>
+<p>我们可以打开Claude Code的debug模式，看一看更详细的Hook执行日志。下面是以debug模式启动CC的命令：</p>
+<p><code>claude --debug</code></p>
+<p>打开debug后，可以看到debug文件路径：</p>
+<img src="cc_9_13.png">
+<p>然后，另外开一个终端，<code>tail -f</code> debug文件的实时输出：</p>
+<img src="cc_9_14.png">
+<p>再次触发一下Hook，看看debug文件的输出：</p>
+<img src="cc_9_15.png">
+<p>可以清晰看到，Hook被触发执行、响应结果等，通过这种方式，来调试Hook。</p>
+<h1 id="4结语">4.结语<a hidden class="anchor" aria-hidden="true" href="#4结语">#</a></h1>
+<p>本篇详细介绍了Claude Code生命周期中的主要Hook事件、如何配置Hook、Hook的输入输出，最后，演示了如何自定义一个Hook以及如何debug Hook。</p>
+<p>下一篇会介绍Claude Code的权限体系。</p>
+<p>写到这儿，已经是Claude Code系列的第9篇文章了，大概还有2~3篇就结束了。自认为对Claude Code的拆解和介绍，还是比较系统全面的，会坚持写完的。</p>
+<hr>
+<p><strong>感谢你点开这篇文章，欢迎关注我的公众号：10年码农，纯技术分享，一起在AI时代探索未来！</strong></p>
+<p><img alt="公众号" loading="lazy" src="/images/wechat.jpg"></p>
+<hr>
+<p><strong>客官您满意的话，感谢打赏。</strong></p>
+<p><img alt="打赏" loading="lazy" src="/images/pay.jpg"></p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+<nav class="paginav">
+  <a class="next" href="http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E5%85%AB-SubAgent%E8%AF%A6%E8%A7%A3/">
+    <span class="title">Next »</span>
+    <br>
+    <span>玩转Claude Code(八)-SubAgent详解</span>
+  </a>
+</nav>
+
+
+<ul class="share-buttons">
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(九)-Hooks详解 on x"
+            href="https://x.com/intent/tweet/?text=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%b9%9d%29-Hooks%e8%af%a6%e8%a7%a3&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B9%259D-Hooks%25E8%25AF%25A6%25E8%25A7%25A3%2f&amp;hashtags=">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M512 62.554 L 512 449.446 C 512 483.97 483.97 512 449.446 512 L 62.554 512 C 28.03 512 0 483.97 0 449.446 L 0 62.554 C 0 28.03 28.029 0 62.554 0 L 449.446 0 C 483.971 0 512 28.03 512 62.554 Z M 269.951 190.75 L 182.567 75.216 L 56 75.216 L 207.216 272.95 L 63.9 436.783 L 125.266 436.783 L 235.9 310.383 L 332.567 436.783 L 456 436.783 L 298.367 228.367 L 432.367 75.216 L 371.033 75.216 Z M 127.633 110 L 164.101 110 L 383.481 400.065 L 349.5 400.065 Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(九)-Hooks详解 on linkedin"
+            href="https://www.linkedin.com/shareArticle?mini=true&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B9%259D-Hooks%25E8%25AF%25A6%25E8%25A7%25A3%2f&amp;title=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%b9%9d%29-Hooks%e8%af%a6%e8%a7%a3&amp;summary=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%b9%9d%29-Hooks%e8%af%a6%e8%a7%a3&amp;source=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B9%259D-Hooks%25E8%25AF%25A6%25E8%25A7%25A3%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(九)-Hooks详解 on reddit"
+            href="https://reddit.com/submit?url=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B9%259D-Hooks%25E8%25AF%25A6%25E8%25A7%25A3%2f&title=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%b9%9d%29-Hooks%e8%af%a6%e8%a7%a3">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(九)-Hooks详解 on facebook"
+            href="https://facebook.com/sharer/sharer.php?u=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B9%259D-Hooks%25E8%25AF%25A6%25E8%25A7%25A3%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(九)-Hooks详解 on whatsapp"
+            href="https://api.whatsapp.com/send?text=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%b9%9d%29-Hooks%e8%af%a6%e8%a7%a3%20-%20http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B9%259D-Hooks%25E8%25AF%25A6%25E8%25A7%25A3%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(九)-Hooks详解 on telegram"
+            href="https://telegram.me/share/url?text=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%b9%9d%29-Hooks%e8%af%a6%e8%a7%a3&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B9%259D-Hooks%25E8%25AF%25A6%25E8%25A7%25A3%2f">
+            <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share 玩转Claude Code(九)-Hooks详解 on ycombinator"
+            href="https://news.ycombinator.com/submitlink?t=%e7%8e%a9%e8%bd%acClaude%20Code%28%e4%b9%9d%29-Hooks%e8%af%a6%e8%a7%a3&u=http%3a%2f%2flocalhost%3a1313%2fposts%2f%25E7%258E%25A9%25E8%25BD%25ACClaude-Code%25E4%25B9%259D-Hooks%25E8%25AF%25A6%25E8%25A7%25A3%2f">
+            <svg version="1.1" xml:space="preserve" width="30px" height="30px" viewBox="0 0 512 512" fill="currentColor"
+                xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+                <path
+                    d="M449.446 0C483.971 0 512 28.03 512 62.554L512 449.446C512 483.97 483.97 512 449.446 512L62.554 512C28.03 512 0 483.97 0 449.446L0 62.554C0 28.03 28.029 0 62.554 0L449.446 0ZM183.8767 87.9921H121.8427L230.6673 292.4508V424.0079H281.3328V292.4508L390.1575 87.9921H328.1233L256 238.2489z" />
+            </svg>
+        </a>
+    </li>
+</ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://localhost:1313/">ByteZhou的个人空间</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

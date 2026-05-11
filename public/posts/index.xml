@@ -6,8 +6,166 @@
     <description>Recent content in Posts on ByteZhou的个人空间</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 22 Apr 2026 18:05:00 +1000</lastBuildDate>
+    <lastBuildDate>Sun, 10 May 2026 16:58:00 +1000</lastBuildDate>
     <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>玩转Claude Code(九)-Hooks详解</title>
+      <link>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B9%9D-Hooks%E8%AF%A6%E8%A7%A3/</link>
+      <pubDate>Sun, 10 May 2026 16:58:00 +1000</pubDate>
+      <guid>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B9%9D-Hooks%E8%AF%A6%E8%A7%A3/</guid>
+      <description>&lt;p&gt;大家好，我是bytezhou，最近开始拍视频了，公众号的更新也越来越慢了&amp;hellip;本篇介绍Claude Code的&lt;code&gt;Hooks&lt;/code&gt;，一种&amp;quot;事件触发&amp;quot;机制。&lt;/p&gt;
+&lt;p&gt;流行的开发框架都有&amp;quot;生命周期回调&amp;quot;，Claude Code的&lt;code&gt;Hooks机制&lt;/code&gt;，也是一种&lt;strong&gt;基于生命周期的回调机制&lt;/strong&gt;。简单来说，我们在CC会话的生命周期的一些节点处，预先埋下&amp;quot;钩子&amp;quot;，等CC的会话执行到那个节点时，就会自动触发&amp;quot;钩子&amp;quot;的操作，这就是&lt;code&gt;Hooks&lt;/code&gt;。&lt;/p&gt;
+&lt;h1 id=&#34;1人驱动与事件驱动&#34;&gt;1.&amp;ldquo;人驱动&amp;quot;与&amp;quot;事件驱动&amp;rdquo;&lt;/h1&gt;
+&lt;p&gt;我们把&lt;code&gt;Hooks&lt;/code&gt;和前面介绍的&lt;code&gt;Slash Commands&lt;/code&gt;简单对比一下：&lt;/p&gt;
+&lt;img src=&#34;cc_9_1.png&#34;&gt;
+&lt;ul&gt;
+&lt;li&gt;Slash Commands：&amp;ldquo;人驱动&amp;rdquo;，用户主动发指令。&lt;/li&gt;
+&lt;li&gt;Hooks：&amp;ldquo;事件驱动&amp;rdquo;，就像CC会话中埋下的&amp;quot;传感器&amp;quot;，一旦生命周期事件发生了，&amp;ldquo;传感器&amp;quot;上的动作就会被触发。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;2claude-code生命周期中的hook事件&#34;&gt;2.Claude Code生命周期中的Hook事件&lt;/h1&gt;
+&lt;p&gt;Claude Code生命周期的主要节点示例如下（每个节点均可配置相应的Hook事件回调）：&lt;/p&gt;
+&lt;img src=&#34;cc_9_2.png&#34;&gt;
+&lt;blockquote&gt;
+&lt;p&gt;启动CC → SessionStart → 用户输入Prompt → UserPromptSubmit →
+CC调用工具 → PreToolUse → 工具执行，返回结果 →
+PostToolUse  → 主回合结束 → Stop → 退出CC → SessionEnd&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;常用的Hook事件如下：&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;事件&lt;/th&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;触发时机&lt;/th&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;使用场景&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;SessionStart&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;会话启动时&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;执行一些初始化动作，加载特定&amp;quot;记忆&amp;quot;等&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;UserPromptSubmit&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;用户输入Prompt、CC还没执行时&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;可以对用户输入做一些安全校验、过滤等&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;PreToolUse&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;CC调用工具前，&lt;strong&gt;准备执行但还未执行&lt;/strong&gt;&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;可以获取传给工具的参数，做一些个性化操作，甚至拦截某次工具调用&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;PostToolUse&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;工具执行后&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;可以获取工具执行结果，做一些扫尾动作&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;Stop&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;主会话中的一轮对话结束时&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;进行&amp;quot;总结式&amp;quot;动作，记日志、存储结论性的结果等&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;SessionEnd&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;会话结束时&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;一些清理工作，或者保存当前状态等&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2 id=&#34;21-hooks的配置格式&#34;&gt;2.1 Hooks的配置格式&lt;/h2&gt;
+&lt;p&gt;跟前面介绍的&lt;code&gt;Slash Commands&lt;/code&gt;、&lt;code&gt;Skills&lt;/code&gt;类似，&lt;code&gt;Hooks&lt;/code&gt;的配置也分为项目级、用户级：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;项目级Hooks配置：位于 &lt;code&gt;项目根目录/.claude/settings.json&lt;/code&gt; 文件中&lt;/li&gt;
+&lt;li&gt;用户级Hooks配置：位于 &lt;code&gt;~/.claude/settings.json&lt;/code&gt; 文件中&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;具体的格式如下：&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>玩转Claude Code(八)-SubAgent详解</title>
+      <link>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E5%85%AB-SubAgent%E8%AF%A6%E8%A7%A3/</link>
+      <pubDate>Fri, 01 May 2026 22:37:00 +1000</pubDate>
+      <guid>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E5%85%AB-SubAgent%E8%AF%A6%E8%A7%A3/</guid>
+      <description>&lt;p&gt;大家好，我是bytezhou，这次更新拖的有点久，本篇介绍Claude Code的另一个强大能力，&amp;ldquo;智能分身&amp;rdquo;——&lt;strong&gt;SubAgent&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;当一个任务越发复杂时，CC就有点&amp;quot;力不从心&amp;quot;了，举个例子，你让CC帮你重构订单模块，既想做性能优化（响应与耗时尽可能低）、又想做安全校验（各种输入校验/边界检查等）。&lt;/p&gt;
+&lt;p&gt;对CC来说，这是两个&amp;quot;冲突&amp;quot;的改造，性能优化时，可能绕过了某些安全机制，直接调用内核方法；安全校验时，又禁止使用&amp;quot;unsafe&amp;quot;的方式。CC这么一执行，直接就&amp;quot;裂开&amp;quot;了，最终的任务结果也混乱不堪。&lt;/p&gt;
+&lt;p&gt;在&lt;strong&gt;同时扮演多个角色的&lt;/strong&gt;场景下，CC需要从&amp;quot;单Agent&amp;quot;走向&amp;quot;多Agent&amp;quot;，从&amp;quot;一个全才&amp;quot;变成&amp;quot;多个专家&amp;quot;，这就是&lt;code&gt;SubAgent机制&lt;/code&gt;。&lt;/p&gt;
+&lt;h1 id=&#34;1-多agent模式的现实意义&#34;&gt;1. 多Agent模式的&amp;quot;现实意义&amp;quot;&lt;/h1&gt;
+&lt;p&gt;现实中，一个团队接了一个开发任务后，一般是如何处理的？他们会拆解任务、然后并行处理，UI同事做UI设计、前端同事做页面开发、后端同事做后端业务逻辑开发，各自完成后，再汇总进行集成测试。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;多Agent模式&lt;/code&gt;（Multi-Agent）正是借鉴了&amp;quot;团队分工&amp;quot;的思想：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;上下文隔离：&lt;code&gt;主Agent&lt;/code&gt;把一个&amp;quot;大任务&amp;quot;拆分成多个&amp;quot;子任务&amp;quot;，然后唤起多个&lt;code&gt;子Agent&lt;/code&gt;去处理每个子任务，每个&lt;code&gt;子Agent&lt;/code&gt;均拥有独立干净的上下文窗口，互不影响。&lt;/li&gt;
+&lt;li&gt;并行处理：多个&lt;code&gt;子Agent&lt;/code&gt;可以根据&amp;quot;子任务&amp;quot;的依赖关系，并行的处理不同的&amp;quot;子任务&amp;quot;，然后将各自的处理结果 返给&lt;code&gt;主Agent&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;注意力隔离：每个&lt;code&gt;子Agent&lt;/code&gt;都有自己独特的角色定义、Skill、历史记忆等，每个&lt;code&gt;子Agent&lt;/code&gt;都是一个&amp;quot;专家&amp;quot;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;上述的&lt;code&gt;多Agent模式&lt;/code&gt;，正是CC的SubAgent机制的理论基础。&lt;/p&gt;
+&lt;h1 id=&#34;2-subagent专家分身&#34;&gt;2. SubAgent:&amp;ldquo;专家分身&amp;rdquo;&lt;/h1&gt;
+&lt;p&gt;总的来说，&lt;code&gt;SubAgent&lt;/code&gt;就是在Claude Code的主会话中&amp;quot;临时克隆&amp;quot;出的、拥有独立上下文窗口的、专有技能的&amp;quot;专家&amp;quot;。可以这样理解：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Claude Code的主会话是公司的&amp;quot;CEO&amp;quot;，SubAgent就是下面的技术总监、市场总监、运营总监、人事总监等。当公司遇到了某方面的问题，&amp;ldquo;CEO&amp;quot;先判断一下，这个问题归谁管，然后就把问题指派给相应的&amp;quot;总监&amp;rdquo;，这个&amp;quot;总监&amp;quot;带着自己的团队（专有的Skill、工具、记忆等）把问题处理了，最后把处理结果汇报给&amp;quot;CEO&amp;quot;。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;img src=&#34;cc_8_1.png&#34;&gt;
+&lt;p&gt;SubAgent的主要特性：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;独立的上下文&lt;/strong&gt;：有自己的上下文窗口，与主会话的上下文隔离，避免&amp;quot;上下文污染&amp;quot;。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;专属的定义&lt;/strong&gt;：每个SubAgent有自己专属的定义，包括角色、执行流程、Skill、工具等。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;21-定义一个subagent&#34;&gt;2.1 定义一个SubAgent&lt;/h2&gt;
+&lt;p&gt;跟前面介绍的Slash Command、Skill类似，&lt;strong&gt;定义一个SubAgent，也是通过带YAML Frontmatter的Markdown文件&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;同理，SubAgent也分为&lt;strong&gt;项目级&lt;/strong&gt;和&lt;strong&gt;用户级&lt;/strong&gt;：&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;&lt;/th&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;存放位置&lt;/th&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;作用域&lt;/th&gt;
+          &lt;th style=&#34;text-align: center&#34;&gt;使用场景&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;项目级SubAgent&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;./.claude/agents/&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;只能用于当前项目&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;定义与当前项目强相关的SubAgent，团队共享，提交到git&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;用户级SubAgent&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;~/.claude/agents/&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;当前用户本地的所有项目均可使用&lt;/td&gt;
+          &lt;td style=&#34;text-align: center&#34;&gt;定义该用户私人专用的SubAgent，对本地的所用项目均生效，无需提交到git&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;若出现同名SubAgent，CC在加载时，项目级会覆盖用户级。&lt;/p&gt;
+&lt;h2 id=&#34;22-subagent的markdown文件详解&#34;&gt;2.2 SubAgent的Markdown文件详解&lt;/h2&gt;
+&lt;p&gt;下面是一个代码检视器的SubAgent定义（来自&lt;strong&gt;everything-claude-code&lt;/strong&gt;）：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;---
+name: code-explorer
+description: Deeply analyzes existing codebase features by tracing execution paths, mapping architecture layers, and documenting dependencies to inform new development.
+model: sonnet
+tools: [Read, Grep, Glob, Bash]
+---
+
+# Code Explorer Agent
+
+You deeply analyze codebases to understand how existing features work before new work begins.
+
+## Analysis Process
+
+### 1. Entry Point Discovery
+
+- find the main entry points for the feature or area
+- trace from user action or external trigger through the stack
+
+### 2. Execution Path Tracing
+
+- follow the call chain from entry to completion
+- note branching logic and async boundaries
+- map data transformations and error paths
+
+......
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们来看一下元数据和正文：&lt;/p&gt;</description>
+    </item>
     <item>
       <title>玩转Claude Code(七)-写个微信公众号的MCP Server</title>
       <link>http://localhost:1313/posts/%E7%8E%A9%E8%BD%ACClaude-Code%E4%B8%83-%E5%86%99%E4%B8%AA%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7%E7%9A%84MCP-Server/</link>
